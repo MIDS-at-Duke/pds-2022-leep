@@ -14,3 +14,32 @@ opioids_raw = pd.read_csv("https://d2ty8gaf6rmowa.cloudfront.net/dea-pain-pill-d
 states = ["FL","WA","TX"]
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#overdose data
+overdose_2006 = pd.read_csv("/Users/pr158admin/Desktop/Practical Data Science/project/US_VitalStatistics/Underlying Cause of Death, 2006.txt", sep =" ")
+
+overdose_2006.head(10)
