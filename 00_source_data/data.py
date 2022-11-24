@@ -112,3 +112,37 @@ overdose_2006 = pd.read_csv(
 )
 
 overdose_2006.head(10)
+
+# Constant States Selection
+df_selection = pd.read_csv("elder_generation_proportion_per_state.csv")
+df_selection = df_selection.rename(columns={"0.165": "proportion"})
+df_selection = df_selection.rename(columns={"United States": "state"})
+df_selection = df_selection.loc[:50, :]
+florida = df_selection.loc[
+    df_selection["state"] == "Florida",
+].proportion
+washington = df_selection.loc[
+    df_selection["state"] == "Washington",
+].proportion
+texas = df_selection.loc[
+    df_selection["state"] == "Texas",
+].proportion
+df_selection["Florida_diff"] = (
+    df_selection["proportion"].apply(lambda x: x - florida).abs()
+)
+df_selection["Washington_diff"] = (
+    df_selection["proportion"].apply(lambda x: x - washington).abs()
+)
+df_selection["Texas_diff"] = df_selection["proportion"].apply(lambda x: x - texas).abs()
+florida_states = df_selection.nsmallest(4, "Florida_diff").state.tolist()
+texas_states = df_selection.nsmallest(4, "Texas_diff", keep="all").state.tolist()
+washington_states = df_selection.nsmallest(
+    4, "Washington_diff", keep="all"
+).state.tolist()
+print(f"the constant states for Florida is: {florida_states}")
+print(f"the constant states for Texas is: {texas_states}")
+print(f"the constant states for Washington is: {washington_states}")
+
+# ['Florida', 'Maine', 'West Virginia', 'Vermont']
+# the constant states for Texas is: ['Texas', 'Alaska', 'District of Columbia', 'Utah']
+# the constant states for Washington is: ['Illinois', 'Louisiana', 'Maryland', 'Oklahoma', 'Washington']
