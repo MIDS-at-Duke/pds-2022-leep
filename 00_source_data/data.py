@@ -113,11 +113,16 @@ overdose_2006 = pd.read_csv(
 
 overdose_2006.head(10)
 
-# Constant States Selection
+## Constant States Selection
 df_selection = pd.read_csv("elder_generation_proportion_per_state.csv")
 df_selection = df_selection.rename(columns={"0.165": "proportion"})
 df_selection = df_selection.rename(columns={"United States": "state"})
 df_selection = df_selection.loc[:50, :]
+
+# removing alaska
+i = df_selection[df_selection.state == "Alaska"].index
+df_selection.drop(i, inplace=True)
+
 florida = df_selection.loc[
     df_selection["state"] == "Florida",
 ].proportion
@@ -143,6 +148,6 @@ print(f"the constant states for Florida is: {florida_states}")
 print(f"the constant states for Texas is: {texas_states}")
 print(f"the constant states for Washington is: {washington_states}")
 
-# ['Florida', 'Maine', 'West Virginia', 'Vermont']
-# the constant states for Texas is: ['Texas', 'Alaska', 'District of Columbia', 'Utah']
+# the constant states for Florida is: ['Florida', 'Maine', 'West Virginia', 'Vermont']
+# the constant states for Texas is: ['Texas', 'District of Columbia', 'Utah', 'Georgia']
 # the constant states for Washington is: ['Illinois', 'Louisiana', 'Maryland', 'Oklahoma', 'Washington']
