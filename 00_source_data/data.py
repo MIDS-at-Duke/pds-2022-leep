@@ -114,40 +114,42 @@ overdose_2006 = pd.read_csv(
 overdose_2006.head(10)
 
 ## Constant States Selection
-df_selection = pd.read_csv("elder_generation_proportion_per_state.csv")
-df_selection = df_selection.rename(columns={"0.165": "proportion"})
-df_selection = df_selection.rename(columns={"United States": "state"})
-df_selection = df_selection.loc[:50, :]
+def constant_states(states, num_constant_states, df_selection):
+    """
+    The function will return the Constant States we want to compare with the states of our interest.
+    """
 
-# removing alaska
+    states_elder_proportions = {}
+
+    for s in states:
+        a = df_selection.loc[
+            df_selection["state"] == s,
+        ]["proportion"]
+        states_elder_proportions[s] = a.values.tolist()[0]
+    for k, v in states_elder_proportions.items():
+        df_selection[k] = df_selection["proportion"].apply(lambda x: x - v).abs()
+
+    constant_states = {}
+    for i in states:
+        a = df_selection.nsmallest(num_constant_states + 1, i).state.tolist()
+        del a[0]
+        constant_states[i] = a
+
+    return constant_states
+
+
+import pandas as pd
+
+# dataframe cleaning
+df_selection = pd.read_csv("elder_generation_proportion_per_state.csv")
+df_selection = df_selection.rename(
+    columns={"0.165": "proportion", "United States": "state"}
+)
+df_selection = df_selection.loc[:50, :]
 i = df_selection[df_selection.state == "Alaska"].index
 df_selection.drop(i, inplace=True)
 
-florida = df_selection.loc[
-    df_selection["state"] == "Florida",
-].proportion
-washington = df_selection.loc[
-    df_selection["state"] == "Washington",
-].proportion
-texas = df_selection.loc[
-    df_selection["state"] == "Texas",
-].proportion
-df_selection["Florida_diff"] = (
-    df_selection["proportion"].apply(lambda x: x - florida).abs()
-)
-df_selection["Washington_diff"] = (
-    df_selection["proportion"].apply(lambda x: x - washington).abs()
-)
-df_selection["Texas_diff"] = df_selection["proportion"].apply(lambda x: x - texas).abs()
-florida_states = df_selection.nsmallest(4, "Florida_diff").state.tolist()
-texas_states = df_selection.nsmallest(4, "Texas_diff", keep="all").state.tolist()
-washington_states = df_selection.nsmallest(
-    4, "Washington_diff", keep="all"
-).state.tolist()
-print(f"the constant states for Florida is: {florida_states}")
-print(f"the constant states for Texas is: {texas_states}")
-print(f"the constant states for Washington is: {washington_states}")
-
-# the constant states for Florida is: ['Florida', 'Maine', 'West Virginia', 'Vermont']
-# the constant states for Texas is: ['Texas', 'District of Columbia', 'Utah', 'Georgia']
-# the constant states for Washington is: ['Illinois', 'Louisiana', 'Maryland', 'Oklahoma', 'Washington']
+# Generating constant states
+states = ["Florida", "Washington", "Texas"]
+num_constant_states = 3
+constant_states(states, 3, df_selection=df_selection)
