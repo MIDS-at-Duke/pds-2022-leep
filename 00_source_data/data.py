@@ -168,5 +168,5 @@ overdose_deaths2=overdose_deaths[overdose_deaths["County"].str.contains('|'.join
 overdose_copy=overdose_deaths2.copy()
 overdose_copy[['County', 'State']]= overdose_deaths2.County.str.split(",", n=1, expand = True)
 overdose_copy['County']=overdose_copy['County'].str.lower()
+overdose_copy["County"]=overdose_copy["County"].str.replace('county', '')
 overdose_copy.drop(['Notes','Year Code'], axis=1)
-
