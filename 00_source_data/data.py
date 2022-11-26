@@ -18,7 +18,7 @@ url = "/Users/lorna/Downloads/prescription_data.zip"
 opioids_raw = pd.read_csv(
     url,
     chunksize=1000000,
-    compression= "zip",
+    compression="zip",
     iterator=True,
     usecols=[
         "BUYER_STATE",
@@ -29,14 +29,101 @@ opioids_raw = pd.read_csv(
     ],
 )
 
-#states from the control function
-states = ["FL", "WA", "TX", "ME", "WV","VT", "LA", "MD", "UT", "OK", "GA", "DC"]
+# states from the control function
+states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "DC"]
 tmp = []
 for data in opioids_raw:
     tmpdata = data[data["BUYER_STATE"].isin(states)]
     tmp.append(tmpdata)
 opioids_data = pd.concat(tmp)
 opioids_data.to_csv("opioids_data.csv", encoding="utf-8", index=False)
+
+
+# Formatting the dates
+
+opioids_data["TRANSACTION_DATE"].dtype  # We identified an object type
+opioids_data["TRANSACTION_DATE"].sample(10)
+
+# The values clearly do not have the same character length,
+# and they will be converted to strings, in order to easily add 0s
+# to the shorter values
+
+opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("str")
+
+
+def date_len(element):
+    """
+    This function counts the characters in the TRANSACTION_DATE.
+    A full date should have 8 characters, any less or more necessitates
+    cleaning.
+    """
+    return len(element)
+
+
+# Creating a new column to identify the shorter strings
+opioids_data["date_length"] = opioids_data["TRANSACTION_DATE"].apply(date_len)
+opioids_data[["TRANSACTION_DATE", "date_length"]].sample(10)
+
+# Date strings with 8,9,10, and 7 characters.
+opioids_data["date_length"].value_counts()
+
+# Turning them all to floats and then back to integers to easily remove the decimal points,
+# then back to strings.
+# Now verify the new value_counts of the lengths after recalculating the date_length column
+opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("float")
+opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("int")
+opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("str")
+
+# Change successful, only 8 and 7 character strings.
+# Now we just have to fix the 7 date strings.
+opioids_data["date_length"] = opioids_data["TRANSACTION_DATE"].apply(date_len)
+opioids_data["date_length"].value_counts()
+
+# adding the 0s to the shorter strings, so they have 8 characters
+opioids_data.loc[opioids_data.loc[:, "date_length"] == 7, "TRANSACTION_DATE"] = (
+    "0" + opioids_data.loc[opioids_data.loc[:, "date_length"] == 7, "TRANSACTION_DATE"]
+)
+
+# testing the changes
+opioids_data["date_length"] = opioids_data["TRANSACTION_DATE"].apply(date_len)
+assert sum(opioids_data["date_length"] == 8) == opioids_data.shape[0]
+
+# assuming the assert passed, all of our date strings now have 8 characters.
+# dropping the placeholder date_length column
+opioids_data = opioids_data.drop(columns="date_length")
+
+# extracting the year for easy referencing and grouping
+opioids_data["TRANSACTION_YEAR"] = opioids_data["TRANSACTION_DATE"].str.extract(
+    "[0-9]{4}(20[0-9]{2})"
+)
+
+opioids_data["TRANSACTION_YEAR"] = opioids_data["TRANSACTION_YEAR"].astype(int)
+
+# datetime version of TRANSACTION_DATE column creation
+# This is crucial for filtering by months
+
+
+def insert_slash(element):
+    """
+    This function is to insert the slashes to make the dates
+    more readable.
+    """
+
+    s = element
+
+    return s[:2] + "/" + s[2:4] + "/" + s[4:]
+
+
+opioids_data["TRANSACTION_DATE_DT"] = opioids_data["TRANSACTION_DATE"].apply(
+    insert_slash
+)
+
+opioids_data["TRANSACTION_DATE_DT"] = pd.to_datetime(
+    opioids_data["TRANSACTION_DATE_DT"]
+)
+
+# final check for the dates
+opioids_data[["TRANSACTION_DATE_DT", "TRANSACTION_YEAR"]].head(10)
 
 
 # The populations
@@ -84,6 +171,7 @@ def constant_states(states, num_constant_states, df_selection):
         constant_states[i] = a
 
     return constant_states
+
 
 # dataframe cleaning
 df_selection = pd.read_csv("elder_generation_proportion_per_state.csv")
