@@ -1,11 +1,14 @@
 import pandas as pd
+
 url = "/Users/lorna/Downloads/prescription_data.zip"
 
-states = ["FL", "WA", "TX", "ME", "WV","VT", "LA", "MD", "UT", "OK", "GA", "DC"]
+states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "DC"]
 
-opioids_data = pd.read_csv("/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/pds-2022-leep/00_source_data/opioids_data.csv")
+opioids_data = pd.read_csv(
+    "/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/pds-2022-leep/00_source_data/opioids_data.csv"
+)
 
-# Check if they states lists are identical 
+# Check if they states lists are identical
 assert states.sort() == (opioids_data["BUYER_STATE"].unique()).sort()
 
 
@@ -65,14 +68,27 @@ opioids_data["TRANSACTION_DATE_DT"] = pd.to_datetime(
 )
 
 
-#create a MME per WT to standardize opioids per transaction
+# create a MME per WT to standardize opioids per transaction
 
 opioids_data["CALC_BASE_WT_IN_GM"].isnull().values.any()
 
 opioids_data["MME_Conversion_Factor"].isnull().values.any()
 
-opioids_data["Opioids_Shipment_IN_GM"] = opioids_data["CALC_BASE_WT_IN_GM"]*opioids_data["MME_Conversion_Factor"]
+opioids_data["Opioids_Shipment_IN_GM"] = (
+    opioids_data["CALC_BASE_WT_IN_GM"] * opioids_data["MME_Conversion_Factor"]
+)
 
 opioids_data.sample(10)
 
 
+# FIPS code merging into Opioids dataset
+opioids["BUYER_COUNTY"] = opioids["BUYER_COUNTY"].astype(str) + " county"
+opioids["BUYER_COUNTY"] = opioids["BUYER_COUNTY"].str.lower()
+
+fips.name = fips.name.str.lower()
+fips = fips.rename(columns={"name": "BUYER_COUNTY", "state": "BUYER_STATE"})
+fips = fips.replace(to_replace=" county", value="", regex=True)
+fips["BUYER_COUNTY"] = fips["BUYER_COUNTY"].astype(str) + " county"
+merged_opioid_fips = pd.merge(
+    opioids, fips, how="left", on=["BUYER_STATE", "BUYER_COUNTY"], indicator=False
+)
