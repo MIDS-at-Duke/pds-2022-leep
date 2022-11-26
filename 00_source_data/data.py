@@ -13,12 +13,12 @@ fips.columns
 
 # Opioids Description Dataset
 # url = "https://d2ty8gaf6rmowa.cloudfront.net/dea-pain-pill-database/bulk/arcos_all_washpost.tsv.gz"
-url = r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\arcos_all_washpost.tsv"
+url = "/Users/lorna/Downloads/prescription_data.zip"
 
 opioids_raw = pd.read_csv(
     url,
     chunksize=1000000,
-    sep="\t",
+    compression= "zip",
     iterator=True,
     usecols=[
         "BUYER_STATE",
@@ -28,7 +28,9 @@ opioids_raw = pd.read_csv(
         "MME_Conversion_Factor",
     ],
 )
-states = ["FL", "WA", "TX"]
+
+#states from the control function
+states = ["FL", "WA", "TX", "ME", "WV","VT", "LA", "MD", "UT", "OK", "GA", "DC"]
 tmp = []
 for data in opioids_raw:
     tmpdata = data[data["BUYER_STATE"].isin(states)]
@@ -36,60 +38,6 @@ for data in opioids_raw:
 opioids_data = pd.concat(tmp)
 opioids_data.to_csv("opioids_data.csv", encoding="utf-8", index=False)
 
-# Formatting the dates
-
-opioids_data["TRANSACTION_DATE"].dtype  # We identified an int64 type
-opioids_data["TRANSACTION_DATE"].head(2)
-
-# The values do not have the same length, and they will be converted to strings to add 0s to the shorter values
-opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("str")
-
-
-def date_len(element):
-
-    return len(element)
-
-
-# Creating a new column to identify the shorter strings
-opioids_data["date_length"] = opioids_data["TRANSACTION_DATE"].apply(date_len)
-opioids_data[["TRANSACTION_DATE", "date_length"]].head()
-
-# adding the 0s to the shorter strings
-opioids_data.loc[opioids_data.loc[:, "date_length"] == 7, "TRANSACTION_DATE"] = (
-    "0" + opioids_data.loc[opioids_data.loc[:, "date_length"] == 7, "TRANSACTION_DATE"]
-)
-
-# testing the changes
-opioids_data["date_length"] = opioids_data["TRANSACTION_DATE"].apply(date_len)
-assert sum(opioids_data["date_length"] == 8) == opioids_data.shape[0]
-
-# dropping the placeholder column
-opioids_data = opioids_data.drop(columns="date_length")
-
-# extracting the year for easy referencing and grouping
-opioids_data["TRANSACTION_YEAR"] = opioids_data["TRANSACTION_DATE"].str.extract(
-    "[0-9]{4}(20[0-9]{2})"
-)
-
-opioids_data["TRANSACTION_YEAR"] = opioids_data["TRANSACTION_YEAR"].astype(int)
-
-# datetime version of TRANSACTION_DATE column creation
-
-
-def insert_slash(element):
-
-    s = element
-
-    return s[:2] + "/" + s[2:4] + "/" + s[4:]
-
-
-opioids_data["TRANSACTION_DATE_DT"] = opioids_data["TRANSACTION_DATE"].apply(
-    insert_slash
-)
-
-opioids_data["TRANSACTION_DATE_DT"] = pd.to_datetime(
-    opioids_data["TRANSACTION_DATE_DT"]
-)
 
 # The populations
 
@@ -136,9 +84,6 @@ def constant_states(states, num_constant_states, df_selection):
         constant_states[i] = a
 
     return constant_states
-
-
-import pandas as pd
 
 # dataframe cleaning
 df_selection = pd.read_csv("elder_generation_proportion_per_state.csv")
