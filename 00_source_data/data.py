@@ -98,3 +98,75 @@ df_selection.drop(i, inplace=True)
 states = ["Florida", "Washington", "Texas"]
 num_constant_states = 3
 constant_states(states, 3, df_selection=df_selection)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#overdose deaths dataset
+overdose_deaths=pd.read_csv("overdose_df.csv")
+#filtering the states
+states= ["FL", "WA", "TX", "ME", "WV","VT", "LA", "MD", "UT", "OK", "GA", "DC"]
+#overdose_df1 = overdose_df[overdose_df["County"].isin(states)]
+overdose_deaths2=overdose_deaths[overdose_deaths["County"].str.contains('|'.join(states))]
+overdose_copy=overdose_deaths2.copy()
+overdose_copy[['County', 'State']]= overdose_deaths2.County.str.split(",", n=1, expand = True)
+overdose_copy['County']=overdose_copy['County'].str.lower()
+overdose_copy.drop(['Notes','Year Code'], axis=1)
+
