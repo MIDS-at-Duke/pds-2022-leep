@@ -104,11 +104,16 @@ df_selection.drop(i, inplace=True)
 
 # Generating constant states
 states = ["Florida", "Washington", "Texas"]
-num_constant_states = 3
-constant_states(states, 3, df_selection=df_selection)
+num_constant_states = 10
+constant_states(states, 10, df_selection=df_selection)
 # Florida': ['Maine', 'West Virginia', 'Vermont'], ME, WV, VT
 #'Washington': ['Louisiana', 'Maryland', 'Oklahoma'], LA, MD, OK
 #'Texas': ['Colorado', 'Utah', 'Georgia'] GA, UT, CO
+
+#Chnaged states to 10
+# 'Florida': ['Maine','West Virginia','Vermont','Delaware','Hawaii','Montana','Pennsylvania','New Hampshire','South Carolina','New Mexico'],
+# 'Washington': ['Louisiana', 'Maryland', 'Oklahoma', 'Washington','Indiana','Idaho', 'Minnesota','Nebraska','Nevada','Virginia'],
+# Texas': ['Utah', 'Georgia', 'Colorado', 'California', 'North Dakota', 'Illinois','Louisiana','Maryland', 'Oklahoma','Washington']}
 
 
 # overdose deaths dataset
