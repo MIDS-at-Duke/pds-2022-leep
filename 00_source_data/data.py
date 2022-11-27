@@ -30,7 +30,7 @@ opioids_raw = pd.read_csv(
 )
 
 # states from the control function
-states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "DC"]
+states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "CO"]
 tmp = []
 for data in opioids_raw:
     tmpdata = data[data["BUYER_STATE"].isin(states)]
@@ -112,7 +112,7 @@ constant_states(states, 3, df_selection=df_selection)
 
 
 # overdose deaths dataset
-overdose_deaths = pd.read_csv("overdose_df.csv")
+overdose_deaths = pd.read_csv("/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/pds-2022-leep/00_source_data/overdose_df.csv")
 # filtering the states
 states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "CO"]
 # overdose_df1 = overdose_df[overdose_df["County"].isin(states)]
