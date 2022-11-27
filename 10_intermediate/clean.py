@@ -190,19 +190,55 @@ opioid_data_fips_pop = opioid_data_fips_pop.drop(
     ]
 )
 
-# merging overdose deaths
+# Merging the deaths with FIPS first, then with opioid_data_fips_pop
 
-opioid_data_fips_pop_deaths = pd.merge(
-    opioid_data_fips_pop,
-    overdose_copy,
+deaths_fips = pd.merge(
+    overdose_deaths,
+    fips,
     how="left",
-    left_on=["fips", "TRANSACTION_YEAR"],
-    right_on=["County Code", "Year"],
+    left_on=["County Code"],
+    right_on=["fips"],
     indicator=True,
 )
 
+deaths_fips = deaths_fips.drop(columns="_merge")
+
+opioid_data_fips_pop_deaths = pd.merge(
+    opioid_data_fips_pop,
+    deaths_fips,
+    how="left",
+    left_on=["fips", "TRANSACTION_YEAR"],
+    right_on=["fips", "Year"],
+    indicator=True,
+)
+
+
+# These were verified manually, some of these counties had no drug related deaths
+# sometimes there is missing data. Leaving in the _merge column for now
+missing_deaths = opioid_data_fips_pop_deaths.loc[opioid_data_fips_pop_deaths['_merge']=='left_only', :]
+missing_deaths['fips'].unique()
+
+
+
+
+# Replacing missing deaths with 0s, as 0 overdose deaths for those years
+
+
+# Florida': ['Maine', 'West Virginia', 'Vermont'], ME, WV, VT
+#'Washington': ['Louisiana', 'Maryland', 'Oklahoma'], LA, MD, OK
+#'Texas': ['Colorado', 'Utah', 'Georgia'] DC, UT, CO
+
+states_dn = { 'FL': ['FL','ME', 'WV', 'VT'], 'WA': ['WA','LA', 'MD', 'OK'], 'TX':['TX','GA', 'UT', 'CO']}
+
+for state in states_dn:
+
+    target = opioid_data_fips_pop_deaths.loc[opioid_data_fips_pop_deaths["BUYER_STATE_x"] == state,:]
+
+    target.to_csv(f"{state +' subset'}.csv", encoding="utf-8", index=False)
+
+
 # group by state, county and sum of opioids shipment make it opioids clean : pending to add a year so that its by year
-opioids_data_clean = (
+opioid_data_fips_pop_deaths = (
     opioid_data_fips.groupby(["BUYER_STATE", "BUYER_COUNTY"])["Opioids_Shipment_IN_GM"]
     .sum()
     .reset_index()
