@@ -99,8 +99,6 @@ opioids_data["TRANSACTION_DATE_DT"] = pd.to_datetime(
 opioids_data[["TRANSACTION_DATE_DT", "TRANSACTION_YEAR"]].head(10)
 
 
-
-
 # create a MME per WT to standardize opioids per transaction
 
 opioids_data["CALC_BASE_WT_IN_GM"].isnull().values.any()
