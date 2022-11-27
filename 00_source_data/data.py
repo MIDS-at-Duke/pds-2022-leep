@@ -116,12 +116,12 @@ constant_states(states, 10, df_selection=df_selection)
 # Texas': ['Utah', 'Georgia', 'Colorado', 'California', 'North Dakota', 'Illinois','Louisiana','Maryland', 'Oklahoma','Washington']}GA, UT, CO
 
 states_dic = {'Florida':'FL', 'West Virginia': 'WV', 'Vermont': ' VT','Delaware': 'DE ','Hawaii': 'HI','Montana': 'MT','Pennsylvania': 'PA' ,'New Hampshire': 'NH','South Carolina': 'SC','New Mexico': 'NM',
- 'Washington': 'WA','Louisiana': 'LA', 'Maryland': 'MD', 'Oklahoma': 'OK', 'Washington': 'WA','Indiana': 'IN','Idaho': 'ID', 'Minnesota': 'MN','Nebraska': 'NE','Nevada': 'NV','Virginia': 'WV',
- 'Texas': 'TX','Utah':'UT', 'Georgia':'GA', 'Colorado':'CO', 'California':'CA', 'North Dakota':'ND', 'Illinois':'IL','Louisiana':'LA','Maryland':'MD', 'Oklahoma':'OK' ,'Washington':'WA'}
+ 'Washington': 'WA','Louisiana': 'LA', 'Maryland': 'MD', 'Oklahoma': 'OK','Indiana': 'IN','Idaho': 'ID', 'Minnesota': 'MN','Nebraska': 'NE','Nevada': 'NV','Virginia': 'WV',
+ 'Texas': 'TX','Utah':'UT', 'Georgia':'GA', 'Colorado':'CO', 'California':'CA', 'North Dakota':'ND', 'Illinois':'IL','Louisiana':'LA','Maryland':'MD', 'Oklahoma':'OK'}
 
 states_FL = {'Florida':'FL', 'West Virginia': 'WV', 'Vermont': ' VT','Delaware': 'DE ','Hawaii': 'HI','Montana': 'MT','Pennsylvania': 'PA' ,'New Hampshire': 'NH','South Carolina': 'SC','New Mexico': 'NM'}
-states_WA={'Washington': 'WA','Louisiana': 'LA', 'Maryland': 'MD', 'Oklahoma': 'OK', 'Washington': 'WA','Indiana': 'IN','Idaho': 'ID', 'Minnesota': 'MN','Nebraska': 'NE','Nevada': 'NV','Virginia': 'WV'}
-states_TX={'Texas': 'TX','Utah':'UT', 'Georgia':'GA', 'Colorado':'CO', 'California':'CA', 'North Dakota':'ND', 'Illinois':'IL','Louisiana':'LA','Maryland':'MD', 'Oklahoma':'OK' ,'Washington':'WA'}
+states_WA={'Washington': 'WA','Louisiana': 'LA', 'Maryland': 'MD', 'Oklahoma': 'OK','Indiana': 'IN','Idaho': 'ID', 'Minnesota': 'MN','Nebraska': 'NE','Nevada': 'NV','Virginia': 'WV'}
+states_TX={'Texas': 'TX','Utah':'UT', 'Georgia':'GA', 'Colorado':'CO', 'California':'CA', 'North Dakota':'ND', 'Illinois':'IL','Louisiana':'LA','Maryland':'MD', 'Oklahoma':'OK'}
 
 
 # overdose deaths dataset
