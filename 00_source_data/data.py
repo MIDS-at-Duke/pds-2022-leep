@@ -13,11 +13,11 @@ fips.columns
 
 # Opioids Description Dataset
 # url = "https://d2ty8gaf6rmowa.cloudfront.net/dea-pain-pill-database/bulk/arcos_all_washpost.tsv.gz"
-url = "/Users/lorna/Downloads/prescription_data.zip"
+url = r"C:\Users\Eric\Downloads\prescription_data.zip"
 
 opioids_raw = pd.read_csv(
     url,
-    chunksize=1000000,
+    chunksize=10000000,
     compression="zip",
     iterator=True,
     usecols=[
@@ -108,11 +108,13 @@ num_constant_states = 3
 constant_states(states, 3, df_selection=df_selection)
 # Florida': ['Maine', 'West Virginia', 'Vermont'], ME, WV, VT
 #'Washington': ['Louisiana', 'Maryland', 'Oklahoma'], LA, MD, OK
-#'Texas': ['Colorado', 'Utah', 'Georgia'] DC, UT, CO
+#'Texas': ['Colorado', 'Utah', 'Georgia'] GA, UT, CO
 
 
 # overdose deaths dataset
-overdose_deaths = pd.read_csv("/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/pds-2022-leep/00_source_data/overdose_df.csv")
+overdose_deaths = pd.read_csv(
+    r"C:\Users\Eric\Downloads\pds-2022-leep\00_source_data\overdose_df.csv"
+)
 # filtering the states
 states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "CO"]
 # overdose_df1 = overdose_df[overdose_df["County"].isin(states)]
@@ -127,4 +129,13 @@ overdose_copy["County"] = overdose_copy["County"].str.lower()
 overdose_copy["County"] = overdose_copy["County"].str.replace("county", "")
 overdose_copy["County"] = overdose_copy["County"].astype(str) + " county"
 overdose_copy = overdose_copy.drop(["Notes", "Year Code"], axis=1)
+overdose_copy["Deaths"] = overdose_copy["Deaths"].astype("float")
+
+# 8001.0 county code, year 2009 :  52 + 15 deaths = 67 , this is our reference
+# this was done to prevent severe data bloating
+
+overdose_grouped = (
+    overdose_copy.groupby(["County Code", "Year"])["Deaths"].sum().reset_index()
+)
+
 # final dataset to be used is overdose_copy

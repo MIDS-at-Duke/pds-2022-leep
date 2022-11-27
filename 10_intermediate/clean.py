@@ -2,13 +2,11 @@ import pandas as pd
 import datetime as dt
 import numpy as np
 
-url = "/Users/lorna/Downloads/prescription_data.zip"
+url = r"C:\Users\Eric\Downloads\opioids_data.csv"
 
 states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "CO"]
 
-opioids_data = pd.read_csv(
-    "/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/pds-2022-leep/00_source_data/opioids_data.csv"
-)
+opioids_data = pd.read_csv(url)
 
 # Check if they states lists are identical
 assert states.sort() == (opioids_data["BUYER_STATE"].unique()).sort()
@@ -166,7 +164,7 @@ opioid_data_fips = opioid_data_fips.drop(columns="_merge")
 # opioid_data_fips.drop(columns="_merge", inplace=True)
 
 # Our Backup
-opioid_data_fips.to_csv("opioid_data_fips.csv", encoding="utf-8", index=False)
+# opioid_data_fips.to_csv("opioid_data_fips.csv", encoding="utf-8", index=False)
 
 # Merging populations, oddity : year becomes a float
 
@@ -211,7 +209,7 @@ opioid_data_fips_pop = opioid_data_fips_pop.drop(
 # Merging the deaths with FIPS first, then with opioid_data_fips_pop
 
 deaths_fips = pd.merge(
-    overdose_deaths,
+    overdose_grouped,
     fips,
     how="left",
     left_on=["County Code"],
@@ -233,6 +231,28 @@ opioid_data_fips_pop_deaths = pd.merge(
 )
 
 
+# Early Writing
+
+states_dn = {
+    "FL": ["FL", "ME", "WV", "VT"],
+    "WA": ["WA", "LA", "MD", "OK"],
+    "TX": ["TX", "GA", "UT", "CO"],
+}
+
+for state in states_dn:
+
+    target = opioid_data_fips_pop_deaths.loc[
+        opioid_data_fips_pop_deaths["BUYER_STATE_x"].isin(states_dn[state]), :
+    ]
+
+    target.to_csv(f"{state +' subsetcleaned'}.csv", encoding="utf-8", index=False)
+
+
+opioid_data_fips_pop_deaths.to_csv(
+    f"mergescompletednocleaning.csv", encoding="utf-8", index=False
+)
+
+
 # These were verified manually, some of these counties had no drug related deaths
 # sometimes there is missing data. Leaving in the _merge column for now
 missing_deaths = opioid_data_fips_pop_deaths.loc[
@@ -245,10 +265,18 @@ opioid_data_fips_pop_deaths_nonan = opioid_data_fips_pop_deaths[
     ~(opioid_data_fips_pop_deaths["BUYER_COUNTY_x"].isin(["nan county", np.nan]))
 ]
 
-assert (
-    opioid_data_fips_pop_deaths.shape[0] - opioid_data_fips_pop_deaths_nonan.shape[0]
-    == 4359979
+
+# assert (
+#     opioid_data_fips_pop_deaths.shape[0] - opioid_data_fips_pop_deaths_nonan.shape[0]
+#     == 4359979
+# )
+
+opioid_data_fips_pop_deaths_nonan.to_csv(
+    f"mergescompletedwithzeronancounties.csv", encoding="utf-8", index=False
 )
+
+###############################################################
+# Computer Cutsoff HERE!!!!!!!!!!!!!!!!!!!!
 
 # Replacing missing deaths with 0s, as 0 overdose deaths for those years
 
@@ -263,11 +291,10 @@ states_dn = {
     "WA": ["WA", "LA", "MD", "OK"],
     "TX": ["TX", "GA", "UT", "CO"],
 }
-
 for state in states_dn:
 
     target = opioid_data_fips_pop_deaths_nonan.loc[
-        opioid_data_fips_pop_deaths_nonan["BUYER_STATE_x"] == state, :
+        opioid_data_fips_pop_deaths_nonan["BUYER_STATE_x"].isin(states_dn[state]), :
     ]
 
     target.to_csv(f"{state +' subsetcleaned'}.csv", encoding="utf-8", index=False)
