@@ -38,6 +38,10 @@ for data in opioids_raw:
 opioids_data = pd.concat(tmp)
 opioids_data.to_csv("opioids_data.csv", encoding="utf-8", index=False)
 
+# For the following code to work on your local machines due to the ram overhead issue,
+# import the csv you got from the above code block, I'll leave it commented for now
+
+# opioids_data = pd.read_csv("opioids_data.csv")
 
 # Formatting the dates
 
@@ -137,7 +141,7 @@ popstates.head(25)
 pop_counties = pd.read_csv(
     "https://raw.githubusercontent.com/wpinvestigative/arcos-api/master/data/pop_counties_20062014.csv"
 )
-pop_counties.head()
+pop_counties.head(25)
 
 
 # overdose data
@@ -188,76 +192,20 @@ num_constant_states = 3
 constant_states(states, 3, df_selection=df_selection)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#overdose deaths dataset
-overdose_deaths=pd.read_csv("overdose_df.csv")
-#filtering the states
-states= ["FL", "WA", "TX", "ME", "WV","VT", "LA", "MD", "UT", "OK", "GA", "DC"]
-#overdose_df1 = overdose_df[overdose_df["County"].isin(states)]
-overdose_deaths2=overdose_deaths[overdose_deaths["County"].str.contains('|'.join(states))]
-overdose_copy=overdose_deaths2.copy()
-overdose_copy[['County', 'State']]= overdose_deaths2.County.str.split(",", n=1, expand = True)
-overdose_copy['County']=overdose_copy['County'].str.lower()
-overdose_copy["County"]=overdose_copy["County"].str.replace('county', '')
-overdose_copy["County"] = overdose_copy["County"].astype(str) +' county'
-overdose_copy.drop(['Notes','Year Code'], axis=1)
-#final dataset to be used is overdose_copy 
+# overdose deaths dataset
+overdose_deaths = pd.read_csv("overdose_df.csv")
+# filtering the states
+states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "DC"]
+# overdose_df1 = overdose_df[overdose_df["County"].isin(states)]
+overdose_deaths2 = overdose_deaths[
+    overdose_deaths["County"].str.contains("|".join(states))
+]
+overdose_copy = overdose_deaths2.copy()
+overdose_copy[["County", "State"]] = overdose_deaths2.County.str.split(
+    ",", n=1, expand=True
+)
+overdose_copy["County"] = overdose_copy["County"].str.lower()
+overdose_copy["County"] = overdose_copy["County"].str.replace("county", "")
+overdose_copy["County"] = overdose_copy["County"].astype(str) + " county"
+overdose_copy.drop(["Notes", "Year Code"], axis=1)
+# final dataset to be used is overdose_copy
