@@ -163,6 +163,8 @@ opioid_data_fips = pd.merge(
 
 opioid_data_fips = opioid_data_fips.drop(columns="_merge")
 
+# opioid_data_fips.drop(columns="_merge", inplace=True)
+
 # Our Backup
 opioid_data_fips.to_csv("opioid_data_fips.csv", encoding="utf-8", index=False)
 
@@ -190,6 +192,22 @@ opioid_data_fips_pop = opioid_data_fips_pop.drop(
     ]
 )
 
+# inplace method
+
+# opioid_data_fips_pop.drop(
+#     columns=[
+#         "_merge",
+#         "county_name",
+#         "STATE",
+#         "COUNTY",
+#         "NAME",
+#         "variable",
+#         "TRANSACTION_DATE",
+#         "CALC_BASE_WT_IN_GM",
+#         "MME_Conversion_Factor",
+#     ], inplace=True
+# )
+
 # Merging the deaths with FIPS first, then with opioid_data_fips_pop
 
 deaths_fips = pd.merge(
@@ -203,6 +221,8 @@ deaths_fips = pd.merge(
 
 deaths_fips = deaths_fips.drop(columns="_merge")
 
+# deaths_fips.drop(columns="_merge", inplace=True)
+
 opioid_data_fips_pop_deaths = pd.merge(
     opioid_data_fips_pop,
     deaths_fips,
@@ -215,13 +235,20 @@ opioid_data_fips_pop_deaths = pd.merge(
 
 # These were verified manually, some of these counties had no drug related deaths
 # sometimes there is missing data. Leaving in the _merge column for now
-missing_deaths = opioid_data_fips_pop_deaths.loc[opioid_data_fips_pop_deaths['_merge']=='left_only', :]
-missing_deaths['fips'].unique()
+missing_deaths = opioid_data_fips_pop_deaths.loc[
+    opioid_data_fips_pop_deaths["_merge"] == "left_only", :
+]
+missing_deaths["fips"].unique()
 
 # Dropping the nan counties
-opioid_data_fips_pop_deaths_nonan = opioid_data_fips_pop_deaths[~(opioid_data_fips_pop_deaths["BUYER_COUNTY_x"].isin(['nan county',np.nan]))]
+opioid_data_fips_pop_deaths_nonan = opioid_data_fips_pop_deaths[
+    ~(opioid_data_fips_pop_deaths["BUYER_COUNTY_x"].isin(["nan county", np.nan]))
+]
 
-assert opioid_data_fips_pop_deaths.shape[0] - opioid_data_fips_pop_deaths_nonan.shape[0] == 4359979
+assert (
+    opioid_data_fips_pop_deaths.shape[0] - opioid_data_fips_pop_deaths_nonan.shape[0]
+    == 4359979
+)
 
 # Replacing missing deaths with 0s, as 0 overdose deaths for those years
 
@@ -231,13 +258,19 @@ opioid_data_fips_pop_deaths_nonan.fillna(value=0, axis=1, inplace=True)
 #'Washington': ['Louisiana', 'Maryland', 'Oklahoma'], LA, MD, OK
 #'Texas': ['Colorado', 'Utah', 'Georgia'] DC, UT, CO
 
-states_dn = { 'FL': ['FL','ME', 'WV', 'VT'], 'WA': ['WA','LA', 'MD', 'OK'], 'TX':['TX','GA', 'UT', 'CO']}
+states_dn = {
+    "FL": ["FL", "ME", "WV", "VT"],
+    "WA": ["WA", "LA", "MD", "OK"],
+    "TX": ["TX", "GA", "UT", "CO"],
+}
 
 for state in states_dn:
 
-    target = opioid_data_fips_pop_deaths.loc[opioid_data_fips_pop_deaths["BUYER_STATE_x"] == state,:]
+    target = opioid_data_fips_pop_deaths_nonan.loc[
+        opioid_data_fips_pop_deaths_nonan["BUYER_STATE_x"] == state, :
+    ]
 
-    target.to_csv(f"{state +' subset'}.csv", encoding="utf-8", index=False)
+    target.to_csv(f"{state +' subsetcleaned'}.csv", encoding="utf-8", index=False)
 
 
 # group by state, county and sum of opioids shipment make it opioids clean : pending to add a year so that its by year
