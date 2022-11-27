@@ -116,6 +116,35 @@ opioids_data.sample(10)
 opioids_data["BUYER_COUNTY"] = opioids_data["BUYER_COUNTY"].astype(str) + " county"
 opioids_data["BUYER_COUNTY"] = opioids_data["BUYER_COUNTY"].str.lower()
 
+# Modifying bad county names in general
+
+fips_mapper = {
+    "saint johns county": "st. johns county",
+    "saint lucie county": "st. lucie county",
+    "de soto county": "desoto county",
+    "prince georges county": "prince george's county",
+    "queen annes county": "Queen Anne's County",
+    "saint marys county": "st. mary's county",
+    "de witt county": "dewitt county",
+}
+
+for bad_county in fips_mapper:
+
+    opioids_data.loc[
+        opioids_data["BUYER_COUNTY"] == bad_county, "BUYER_COUNTY"
+    ] = fips_mapper[bad_county]
+
+# Modifying for bad Lousiana County names
+# they didn't match because they did not have parish in their names
+# a previous solution of removing them became an issue only in this particular instance, something to note
+
+opioids_data.loc[opioids_data["BUYER_STATE"] == "LA", "BUYER_COUNTY"] = (
+    opioids_data.loc[opioids_data["BUYER_STATE"] == "LA", "BUYER_COUNTY"]
+    .str.replace("parish", "")
+    .str.extract("(.*) county")
+    + " parish county"
+)
+
 # Fips codes csv
 fips = pd.read_csv(
     "https://raw.githubusercontent.com/kjhealy/fips-codes/master/state_and_county_fips_master.csv"
@@ -154,23 +183,3 @@ opioids_data_clean = (
 
 
 # LA : ascension county ->
-
-fips_mapper = {
-    "saint johns county": "st. johns county",
-    "saint lucie county": "st. lucie county",
-    "de soto county": "desoto county",
-    "prince georges county": "prince george's county",
-    "queen annes county": "Queen Anne's County",
-    "saint marys county": "st. mary's county",
-    "de witt county": "dewitt county",
-    "ascension county": "ascension parish county",
-    "jefferson county": "jefferson parish county",
-    "tangipahoa county": "tangipahoa parish county",
-    "lafayette county": "lafayette parish county",
-    "caddo county": "caddo parish county",
-    "orleans county": "orleans parish county",
-    "iberia county": "iberia parish county",
-    "west baton rouge county": "west baton rouge parish county",
-    "acadia county": "acadia parish county",
-    "iberville county": "iberville parish county",
-}
