@@ -218,11 +218,14 @@ opioid_data_fips_pop_deaths = pd.merge(
 missing_deaths = opioid_data_fips_pop_deaths.loc[opioid_data_fips_pop_deaths['_merge']=='left_only', :]
 missing_deaths['fips'].unique()
 
+# Dropping the nan counties
+opioid_data_fips_pop_deaths_nonan = opioid_data_fips_pop_deaths[~(opioid_data_fips_pop_deaths["BUYER_COUNTY_x"].isin(['nan county',np.nan]))]
 
-
+assert opioid_data_fips_pop_deaths.shape[0] - opioid_data_fips_pop_deaths_nonan.shape[0] == 4359979
 
 # Replacing missing deaths with 0s, as 0 overdose deaths for those years
 
+opioid_data_fips_pop_deaths_nonan.fillna(value=0, axis=1, inplace=True)
 
 # Florida': ['Maine', 'West Virginia', 'Vermont'], ME, WV, VT
 #'Washington': ['Louisiana', 'Maryland', 'Oklahoma'], LA, MD, OK
