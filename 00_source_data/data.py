@@ -99,17 +99,22 @@ df_selection = df_selection.rename(
 df_selection = df_selection.loc[:50, :]
 i = df_selection[df_selection.state == "Alaska"].index
 df_selection.drop(i, inplace=True)
+i = df_selection[df_selection.state == "District of Columbia"].index
+df_selection.drop(i, inplace=True)
 
 # Generating constant states
 states = ["Florida", "Washington", "Texas"]
 num_constant_states = 3
 constant_states(states, 3, df_selection=df_selection)
+# Florida': ['Maine', 'West Virginia', 'Vermont'], ME, WV, VT
+#'Washington': ['Louisiana', 'Maryland', 'Oklahoma'], LA, MD, OK
+#'Texas': ['Colorado', 'Utah', 'Georgia'] DC, UT, CO
 
 
 # overdose deaths dataset
 overdose_deaths = pd.read_csv("overdose_df.csv")
 # filtering the states
-states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "DC"]
+states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "CO"]
 # overdose_df1 = overdose_df[overdose_df["County"].isin(states)]
 overdose_deaths2 = overdose_deaths[
     overdose_deaths["County"].str.contains("|".join(states))
