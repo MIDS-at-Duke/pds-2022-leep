@@ -14,23 +14,45 @@ assert states.sort() == (opioids_data["BUYER_STATE"].unique()).sort()
 
 # Formatting the dates
 
-opioids_data["TRANSACTION_DATE"].dtype  # We identified an int64 type
-opioids_data["TRANSACTION_DATE"].head(2)
+opioids_data["TRANSACTION_DATE"].dtype  # We identified an object type
+opioids_data["TRANSACTION_DATE"].sample(10)
 
-# The values do not have the same length, and they will be converted to strings to add 0s to the shorter values
+# The values clearly do not have the same character length,
+# and they will be converted to strings, in order to easily add 0s
+# to the shorter values
+
 opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("str")
 
 
 def date_len(element):
-
+    """
+    This function counts the characters in the TRANSACTION_DATE.
+    A full date should have 8 characters, any less or more necessitates
+    cleaning.
+    """
     return len(element)
 
 
 # Creating a new column to identify the shorter strings
 opioids_data["date_length"] = opioids_data["TRANSACTION_DATE"].apply(date_len)
-opioids_data[["TRANSACTION_DATE", "date_length"]].head()
+opioids_data[["TRANSACTION_DATE", "date_length"]].sample(10)
 
-# adding the 0s to the shorter strings
+# Date strings with 8,9,10, and 7 characters.
+opioids_data["date_length"].value_counts()
+
+# Turning them all to floats and then back to integers to easily remove the decimal points,
+# then back to strings.
+# Now verify the new value_counts of the lengths after recalculating the date_length column
+opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("float")
+opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("int")
+opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("str")
+
+# Change successful, only 8 and 7 character strings.
+# Now we just have to fix the 7 date strings.
+opioids_data["date_length"] = opioids_data["TRANSACTION_DATE"].apply(date_len)
+opioids_data["date_length"].value_counts()
+
+# adding the 0s to the shorter strings, so they have 8 characters
 opioids_data.loc[opioids_data.loc[:, "date_length"] == 7, "TRANSACTION_DATE"] = (
     "0" + opioids_data.loc[opioids_data.loc[:, "date_length"] == 7, "TRANSACTION_DATE"]
 )
@@ -39,7 +61,8 @@ opioids_data.loc[opioids_data.loc[:, "date_length"] == 7, "TRANSACTION_DATE"] = 
 opioids_data["date_length"] = opioids_data["TRANSACTION_DATE"].apply(date_len)
 assert sum(opioids_data["date_length"] == 8) == opioids_data.shape[0]
 
-# dropping the placeholder column
+# assuming the assert passed, all of our date strings now have 8 characters.
+# dropping the placeholder date_length column
 opioids_data = opioids_data.drop(columns="date_length")
 
 # extracting the year for easy referencing and grouping
@@ -50,9 +73,14 @@ opioids_data["TRANSACTION_YEAR"] = opioids_data["TRANSACTION_DATE"].str.extract(
 opioids_data["TRANSACTION_YEAR"] = opioids_data["TRANSACTION_YEAR"].astype(int)
 
 # datetime version of TRANSACTION_DATE column creation
+# This is crucial for filtering by months
 
 
 def insert_slash(element):
+    """
+    This function is to insert the slashes to make the dates
+    more readable.
+    """
 
     s = element
 
@@ -66,6 +94,11 @@ opioids_data["TRANSACTION_DATE_DT"] = opioids_data["TRANSACTION_DATE"].apply(
 opioids_data["TRANSACTION_DATE_DT"] = pd.to_datetime(
     opioids_data["TRANSACTION_DATE_DT"]
 )
+
+# final check for the dates
+opioids_data[["TRANSACTION_DATE_DT", "TRANSACTION_YEAR"]].head(10)
+
+
 
 
 # create a MME per WT to standardize opioids per transaction
