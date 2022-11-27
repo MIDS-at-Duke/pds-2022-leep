@@ -112,24 +112,28 @@ opioids_data["Opioids_Shipment_IN_GM"] = (
 opioids_data.sample(10)
 
 
-# FIPS code merging into Opioids dataset
+#FIPS code merging into Opioids dataset
 opioids_data["BUYER_COUNTY"] = opioids_data["BUYER_COUNTY"].astype(str) + " county"
 opioids_data["BUYER_COUNTY"] = opioids_data["BUYER_COUNTY"].str.lower()
 
-#check for any duplicates
-opioids_data[opioids_data["BUYER_COUNTY"].duplicated() == True]
-
-#group by state, county and sum of opioids shipment make it opioids clean : pending to add a year so that its by year
-opioids_data_clean = opioids_data.groupby(["BUYER_STATE","BUYER_COUNTY"])["Opioids_Shipment_IN_GM"].sum().reset_index()
-
-#🚩 DC has a problem: Investigating DC data
-
-
+# Fips codes csv
+fips = pd.read_csv(
+    "https://raw.githubusercontent.com/kjhealy/fips-codes/master/state_and_county_fips_master.csv"
+)
 #additing FIPS codes
 fips.name = fips.name.str.lower()
 fips = fips.rename(columns={"name": "BUYER_COUNTY", "state": "BUYER_STATE"})
 fips = fips.replace(to_replace=" county", value="", regex=True)
 fips["BUYER_COUNTY"] = fips["BUYER_COUNTY"].astype(str) + " county"
-merged_opioid_fips = pd.merge(
-    opioids, fips, how="left", on=["BUYER_STATE", "BUYER_COUNTY"], indicator=False
+opioid_data_fips = pd.merge(
+    opioids_data, fips, how="left", on=["BUYER_STATE", "BUYER_COUNTY"], indicator=False
 )
+
+
+#group by state, county and sum of opioids shipment make it opioids clean : pending to add a year so that its by year
+opioids_data_clean = opioids_data_fips.groupby(["BUYER_STATE","BUYER_COUNTY"])["Opioids_Shipment_IN_GM"].sum().reset_index()
+
+#🚩 DC has a problem: Investigating DC data
+
+
+
