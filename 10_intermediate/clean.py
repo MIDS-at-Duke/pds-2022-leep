@@ -1,4 +1,6 @@
 import pandas as pd
+import datetime as dt
+import numpy as np
 
 url = "/Users/lorna/Downloads/prescription_data.zip"
 
@@ -105,9 +107,10 @@ opioids_data["CALC_BASE_WT_IN_GM"].isnull().values.any()
 
 opioids_data["MME_Conversion_Factor"].isnull().values.any()
 
-opioids_data["Opioids_Shipment_IN_GM"] = (
-    opioids_data["CALC_BASE_WT_IN_GM"] * opioids_data["MME_Conversion_Factor"]
-)
+
+opioids_data["Opioids_Shipment_IN_GM"] = opioids_data["CALC_BASE_WT_IN_GM"].astype(
+    "float"
+) * opioids_data["MME_Conversion_Factor"].astype("float")
 
 opioids_data.sample(10)
 
@@ -123,7 +126,7 @@ fips_mapper = {
     "saint lucie county": "st. lucie county",
     "de soto county": "desoto county",
     "prince georges county": "prince george's county",
-    "queen annes county": "Queen Anne's County",
+    "queen annes county": "queen anne's county",
     "saint marys county": "st. mary's county",
     "de witt county": "dewitt county",
 }
@@ -155,9 +158,48 @@ fips = fips.rename(columns={"name": "BUYER_COUNTY", "state": "BUYER_STATE"})
 fips = fips.replace(to_replace=" county", value="", regex=True)
 fips["BUYER_COUNTY"] = fips["BUYER_COUNTY"].astype(str) + " county"
 opioid_data_fips = pd.merge(
-    opioids_data, fips, how="left", on=["BUYER_STATE", "BUYER_COUNTY"], indicator=False
+    opioids_data, fips, how="left", on=["BUYER_STATE", "BUYER_COUNTY"], indicator=True
 )
 
+opioid_data_fips = opioid_data_fips.drop(columns="_merge")
+
+# Our Backup
+opioid_data_fips.to_csv("opioid_data_fips.csv", encoding="utf-8", index=False)
+
+# Merging populations, oddity : year becomes a float
+
+opioid_data_fips_pop = pd.merge(
+    opioid_data_fips,
+    pop_counties,
+    how="left",
+    left_on=["fips", "TRANSACTION_YEAR"],
+    right_on=["countyfips", "year"],
+    indicator=True,
+)
+opioid_data_fips_pop = opioid_data_fips_pop.drop(
+    columns=[
+        "_merge",
+        "county_name",
+        "STATE",
+        "COUNTY",
+        "NAME",
+        "variable",
+        "TRANSACTION_DATE",
+        "CALC_BASE_WT_IN_GM",
+        "MME_Conversion_Factor",
+    ]
+)
+
+# merging overdose deaths
+
+opioid_data_fips_pop_deaths = pd.merge(
+    opioid_data_fips_pop,
+    overdose_copy,
+    how="left",
+    left_on=["fips", "TRANSACTION_YEAR"],
+    right_on=["County Code", "Year"],
+    indicator=True,
+)
 
 # group by state, county and sum of opioids shipment make it opioids clean : pending to add a year so that its by year
 opioids_data_clean = (
@@ -183,3 +225,14 @@ opioids_data_clean = (
 
 
 # LA : ascension county ->
+# opioid_data_fips.loc[(opioid_data_fips['BUYER_COUNTY'] == 'nan county') | (opioid_data_fips['BUYER_COUNTY'].isnull())]
+
+# def asserting_left_only(df):
+
+#     assert len(df.loc[df['_merge']=='left_only', 'BUYER_COUNTY'].unique()) == 2
+
+#     for null_val in df.loc[df['_merge']=='left_only', 'BUYER_COUNTY'].unique():
+
+#         assert null_val in ['nan county', np.nan]
+
+#     pass
