@@ -113,9 +113,19 @@ opioids_data.sample(10)
 
 
 # FIPS code merging into Opioids dataset
-opioids["BUYER_COUNTY"] = opioids["BUYER_COUNTY"].astype(str) + " county"
-opioids["BUYER_COUNTY"] = opioids["BUYER_COUNTY"].str.lower()
+opioids_data["BUYER_COUNTY"] = opioids_data["BUYER_COUNTY"].astype(str) + " county"
+opioids_data["BUYER_COUNTY"] = opioids_data["BUYER_COUNTY"].str.lower()
 
+#check for any duplicates
+opioids_data[opioids_data["BUYER_COUNTY"].duplicated() == True]
+
+#group by state, county and sum of opioids shipment make it opioids clean : pending to add a year so that its by year
+opioids_data_clean = opioids_data.groupby(["BUYER_STATE","BUYER_COUNTY"])["Opioids_Shipment_IN_GM"].sum().reset_index()
+
+#🚩 DC has a problem: Investigating DC data
+
+
+#additing FIPS codes
 fips.name = fips.name.str.lower()
 fips = fips.rename(columns={"name": "BUYER_COUNTY", "state": "BUYER_STATE"})
 fips = fips.replace(to_replace=" county", value="", regex=True)
