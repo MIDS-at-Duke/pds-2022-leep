@@ -2,7 +2,7 @@ import pandas as pd
 
 url = "/Users/lorna/Downloads/prescription_data.zip"
 
-states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "DC"]
+states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "CO"]
 
 opioids_data = pd.read_csv(
     "/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/pds-2022-leep/00_source_data/opioids_data.csv"
@@ -112,7 +112,7 @@ opioids_data["Opioids_Shipment_IN_GM"] = (
 opioids_data.sample(10)
 
 
-#FIPS code merging into Opioids dataset
+# FIPS code merging into Opioids dataset
 opioids_data["BUYER_COUNTY"] = opioids_data["BUYER_COUNTY"].astype(str) + " county"
 opioids_data["BUYER_COUNTY"] = opioids_data["BUYER_COUNTY"].str.lower()
 
@@ -120,7 +120,7 @@ opioids_data["BUYER_COUNTY"] = opioids_data["BUYER_COUNTY"].str.lower()
 fips = pd.read_csv(
     "https://raw.githubusercontent.com/kjhealy/fips-codes/master/state_and_county_fips_master.csv"
 )
-#additing FIPS codes
+# additing FIPS codes
 fips.name = fips.name.str.lower()
 fips = fips.rename(columns={"name": "BUYER_COUNTY", "state": "BUYER_STATE"})
 fips = fips.replace(to_replace=" county", value="", regex=True)
@@ -130,10 +130,47 @@ opioid_data_fips = pd.merge(
 )
 
 
-#group by state, county and sum of opioids shipment make it opioids clean : pending to add a year so that its by year
-opioids_data_clean = opioids_data_fips.groupby(["BUYER_STATE","BUYER_COUNTY"])["Opioids_Shipment_IN_GM"].sum().reset_index()
+# group by state, county and sum of opioids shipment make it opioids clean : pending to add a year so that its by year
+opioids_data_clean = (
+    opioid_data_fips.groupby(["BUYER_STATE", "BUYER_COUNTY"])["Opioids_Shipment_IN_GM"]
+    .sum()
+    .reset_index()
+)
 
-#🚩 DC has a problem: Investigating DC data
+# 🚩 DC has a problem: Investigating DC data
 
 
+# Diagnostics Code
 
+# opioid_data_fips['fips'].head(10) - Revealed it was a float column
+
+# opioid_data_fips['fips'].value_counts(dropna=False) -  Revealed 5228720 NANS values
+
+# fips[fips['BUYER_STATE']=='FL'] - Took this as a case study, we wanted "saint johns county" from it
+
+# fips.loc[fips['BUYER_STATE']=='FL','BUYER_COUNTY'].unique() - "saint johns" was "st. johns" in the fips
+
+# opioid_data_fips.loc[opioid_data_fips['_merge']=='left_only', 'BUYER_COUNTY'].unique()
+
+
+# LA : ascension county ->
+
+fips_mapper = {
+    "saint johns county": "st. johns county",
+    "saint lucie county": "st. lucie county",
+    "de soto county": "desoto county",
+    "prince georges county": "prince george's county",
+    "queen annes county": "Queen Anne's County",
+    "saint marys county": "st. mary's county",
+    "de witt county": "dewitt county",
+    "ascension county": "ascension parish county",
+    "jefferson county": "jefferson parish county",
+    "tangipahoa county": "tangipahoa parish county",
+    "lafayette county": "lafayette parish county",
+    "caddo county": "caddo parish county",
+    "orleans county": "orleans parish county",
+    "iberia county": "iberia parish county",
+    "west baton rouge county": "west baton rouge parish county",
+    "acadia county": "acadia parish county",
+    "iberville county": "iberville parish county",
+}
