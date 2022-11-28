@@ -104,11 +104,24 @@ df_selection.drop(i, inplace=True)
 
 # Generating constant states
 states = ["Florida", "Washington", "Texas"]
-num_constant_states = 3
-constant_states(states, 3, df_selection=df_selection)
+num_constant_states = 10
+constant_states(states, 10, df_selection=df_selection)
 # Florida': ['Maine', 'West Virginia', 'Vermont'], ME, WV, VT
 #'Washington': ['Louisiana', 'Maryland', 'Oklahoma'], LA, MD, OK
 #'Texas': ['Colorado', 'Utah', 'Georgia'] GA, UT, CO
+
+#Chnaged states to 10
+# 'Florida': ['Maine','West Virginia','Vermont','Delaware','Hawaii','Montana','Pennsylvania','New Hampshire','South Carolina','New Mexico'], ME, WV, VT
+# 'Washington': ['Louisiana', 'Maryland', 'Oklahoma', 'Washington','Indiana','Idaho', 'Minnesota','Nebraska','Nevada','Virginia'],LA, MD, OK
+# Texas': ['Utah', 'Georgia', 'Colorado', 'California', 'North Dakota', 'Illinois','Louisiana','Maryland', 'Oklahoma','Washington']}GA, UT, CO
+
+states_dic = {'Florida':'FL', 'West Virginia': 'WV', 'Vermont': ' VT','Delaware': 'DE ','Hawaii': 'HI','Montana': 'MT','Pennsylvania': 'PA' ,'New Hampshire': 'NH','South Carolina': 'SC','New Mexico': 'NM',
+ 'Washington': 'WA','Louisiana': 'LA', 'Maryland': 'MD', 'Oklahoma': 'OK','Indiana': 'IN','Idaho': 'ID', 'Minnesota': 'MN','Nebraska': 'NE','Nevada': 'NV','Virginia': 'WV',
+ 'Texas': 'TX','Utah':'UT', 'Georgia':'GA', 'Colorado':'CO', 'California':'CA', 'North Dakota':'ND', 'Illinois':'IL','Louisiana':'LA','Maryland':'MD', 'Oklahoma':'OK'}
+
+states_FL = {'Florida':'FL', 'West Virginia': 'WV', 'Vermont': ' VT','Delaware': 'DE ','Hawaii': 'HI','Montana': 'MT','Pennsylvania': 'PA' ,'New Hampshire': 'NH','South Carolina': 'SC','New Mexico': 'NM'}
+states_WA={'Washington': 'WA','Louisiana': 'LA', 'Maryland': 'MD', 'Oklahoma': 'OK','Indiana': 'IN','Idaho': 'ID', 'Minnesota': 'MN','Nebraska': 'NE','Nevada': 'NV','Virginia': 'WV'}
+states_TX={'Texas': 'TX','Utah':'UT', 'Georgia':'GA', 'Colorado':'CO', 'California':'CA', 'North Dakota':'ND', 'Illinois':'IL','Louisiana':'LA','Maryland':'MD', 'Oklahoma':'OK'}
 
 
 # overdose deaths dataset
