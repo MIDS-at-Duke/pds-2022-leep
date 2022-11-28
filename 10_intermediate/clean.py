@@ -2,14 +2,44 @@ import pandas as pd
 import datetime as dt
 import numpy as np
 
-url = r"C:\Users\Eric\Downloads\opioids_data.csv"
+url = r"C:\Users\Eric\Downloads\pds-2022-leep\00_source_data\opioids_data.csv"
 
 states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "CO"]
+
+# Final Buffer States 
+
+final_states = ['WV',
+ 'SC',
+ 'DE ',
+ 'HI',
+ 'NM',
+ 'GA',
+ 'IN',
+ 'MN',
+ 'VT',
+ 'OK',
+ 'LA',
+ 'UT',
+ 'MD',
+ 'FL',
+ 'NV',
+ 'PA',
+ 'IL',
+ 'CO',
+ 'MT',
+ 'TX',
+ 'WA',
+ 'CA',
+ 'NH',
+ 'ID',
+ 'ND',
+ 'NE']
+
 
 opioids_data = pd.read_csv(url)
 
 # Check if they states lists are identical
-assert states.sort() == (opioids_data["BUYER_STATE"].unique()).sort()
+assert final_states.sort() == (opioids_data["BUYER_STATE"].unique()).sort()
 
 
 # Formatting the dates
@@ -164,7 +194,7 @@ opioid_data_fips = opioid_data_fips.drop(columns="_merge")
 # opioid_data_fips.drop(columns="_merge", inplace=True)
 
 # Our Backup
-# opioid_data_fips.to_csv("opioid_data_fips.csv", encoding="utf-8", index=False)
+opioid_data_fips.to_csv("merge1.csv", encoding="utf-8", index=False)
 
 # Merging populations, oddity : year becomes a float
 
@@ -233,19 +263,25 @@ opioid_data_fips_pop_deaths = pd.merge(
 
 # Early Writing
 
-states_dn = {
-    "FL": ["FL", "ME", "WV", "VT"],
-    "WA": ["WA", "LA", "MD", "OK"],
-    "TX": ["TX", "GA", "UT", "CO"],
-}
+states_FL = {'Florida':'FL', 'West Virginia': 'WV', 'Vermont': 'VT','Delaware': 'DE ','Hawaii': 'HI','Montana': 'MT','Pennsylvania': 'PA' ,'New Hampshire': 'NH','South Carolina': 'SC','New Mexico': 'NM'}
+states_WA={'Washington': 'WA','Louisiana': 'LA', 'Maryland': 'MD', 'Oklahoma': 'OK','Indiana': 'IN','Idaho': 'ID', 'Minnesota': 'MN','Nebraska': 'NE','Nevada': 'NV','Virginia': 'WV'}
+states_TX={'Texas': 'TX','Utah':'UT', 'Georgia':'GA', 'Colorado':'CO', 'California':'CA', 'North Dakota':'ND', 'Illinois':'IL','Louisiana':'LA','Maryland':'MD', 'Oklahoma':'OK'}
 
-for state in states_dn:
+states_pairings = {'TX' : [], 'WA' : [], 'FL' : []}
 
+for states_dn in [states_FL, states_WA, states_TX]:
+
+    new_ls = []
+
+    for state in states_dn:
+
+        new_ls.append(states_dn[state])
+        
     target = opioid_data_fips_pop_deaths.loc[
-        opioid_data_fips_pop_deaths["BUYER_STATE_x"].isin(states_dn[state]), :
+        opioid_data_fips_pop_deaths["BUYER_STATE_x"].isin(new_ls), :
     ]
 
-    target.to_csv(f"{state +' subsetcleaned'}.csv", encoding="utf-8", index=False)
+    target.to_csv(f"{new_ls[0] +' subsetprepv1'}.csv", encoding="utf-8", index=False)
 
 
 opioid_data_fips_pop_deaths.to_csv(

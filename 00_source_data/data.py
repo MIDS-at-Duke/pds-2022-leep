@@ -110,18 +110,128 @@ constant_states(states, 10, df_selection=df_selection)
 #'Washington': ['Louisiana', 'Maryland', 'Oklahoma'], LA, MD, OK
 #'Texas': ['Colorado', 'Utah', 'Georgia'] GA, UT, CO
 
-#Chnaged states to 10
+# Chnaged states to 10
 # 'Florida': ['Maine','West Virginia','Vermont','Delaware','Hawaii','Montana','Pennsylvania','New Hampshire','South Carolina','New Mexico'], ME, WV, VT
 # 'Washington': ['Louisiana', 'Maryland', 'Oklahoma', 'Washington','Indiana','Idaho', 'Minnesota','Nebraska','Nevada','Virginia'],LA, MD, OK
 # Texas': ['Utah', 'Georgia', 'Colorado', 'California', 'North Dakota', 'Illinois','Louisiana','Maryland', 'Oklahoma','Washington']}GA, UT, CO
 
-states_dic = {'Florida':'FL', 'West Virginia': 'WV', 'Vermont': ' VT','Delaware': 'DE ','Hawaii': 'HI','Montana': 'MT','Pennsylvania': 'PA' ,'New Hampshire': 'NH','South Carolina': 'SC','New Mexico': 'NM',
- 'Washington': 'WA','Louisiana': 'LA', 'Maryland': 'MD', 'Oklahoma': 'OK','Indiana': 'IN','Idaho': 'ID', 'Minnesota': 'MN','Nebraska': 'NE','Nevada': 'NV','Virginia': 'WV',
- 'Texas': 'TX','Utah':'UT', 'Georgia':'GA', 'Colorado':'CO', 'California':'CA', 'North Dakota':'ND', 'Illinois':'IL','Louisiana':'LA','Maryland':'MD', 'Oklahoma':'OK'}
+states_dic = {
+    "Florida": "FL",
+    "West Virginia": "WV",
+    "Vermont": " VT",
+    "Delaware": "DE ",
+    "Hawaii": "HI",
+    "Montana": "MT",
+    "Pennsylvania": "PA",
+    "New Hampshire": "NH",
+    "South Carolina": "SC",
+    "New Mexico": "NM",
+    "Washington": "WA",
+    "Louisiana": "LA",
+    "Maryland": "MD",
+    "Oklahoma": "OK",
+    "Indiana": "IN",
+    "Idaho": "ID",
+    "Minnesota": "MN",
+    "Nebraska": "NE",
+    "Nevada": "NV",
+    "Virginia": "WV",
+    "Texas": "TX",
+    "Utah": "UT",
+    "Georgia": "GA",
+    "Colorado": "CO",
+    "California": "CA",
+    "North Dakota": "ND",
+    "Illinois": "IL",
+    "Louisiana": "LA",
+    "Maryland": "MD",
+    "Oklahoma": "OK",
+}
 
-states_FL = {'Florida':'FL', 'West Virginia': 'WV', 'Vermont': ' VT','Delaware': 'DE ','Hawaii': 'HI','Montana': 'MT','Pennsylvania': 'PA' ,'New Hampshire': 'NH','South Carolina': 'SC','New Mexico': 'NM'}
-states_WA={'Washington': 'WA','Louisiana': 'LA', 'Maryland': 'MD', 'Oklahoma': 'OK','Indiana': 'IN','Idaho': 'ID', 'Minnesota': 'MN','Nebraska': 'NE','Nevada': 'NV','Virginia': 'WV'}
-states_TX={'Texas': 'TX','Utah':'UT', 'Georgia':'GA', 'Colorado':'CO', 'California':'CA', 'North Dakota':'ND', 'Illinois':'IL','Louisiana':'LA','Maryland':'MD', 'Oklahoma':'OK'}
+states_FL = {
+    "Florida": "FL",
+    "West Virginia": "WV",
+    "Vermont": "VT",
+    "Delaware": "DE ",
+    "Hawaii": "HI",
+    "Montana": "MT",
+    "Pennsylvania": "PA",
+    "New Hampshire": "NH",
+    "South Carolina": "SC",
+    "New Mexico": "NM",
+}
+states_WA = {
+    "Washington": "WA",
+    "Louisiana": "LA",
+    "Maryland": "MD",
+    "Oklahoma": "OK",
+    "Indiana": "IN",
+    "Idaho": "ID",
+    "Minnesota": "MN",
+    "Nebraska": "NE",
+    "Nevada": "NV",
+    "Virginia": "WV",
+}
+states_TX = {
+    "Texas": "TX",
+    "Utah": "UT",
+    "Georgia": "GA",
+    "Colorado": "CO",
+    "California": "CA",
+    "North Dakota": "ND",
+    "Illinois": "IL",
+    "Louisiana": "LA",
+    "Maryland": "MD",
+    "Oklahoma": "OK",
+}
+
+states_dn_full = {}
+
+for states_groups in [states_FL, states_WA, states_TX]:
+
+    states_dn_full.update(states_groups)
+
+states_dn_full
+
+states_set = set()
+
+for key in states_dn_full:
+
+    states_set.add(states_dn_full[key])
+
+states_set
+
+final_states = list(states_set)
+
+
+# Final Chunking process
+
+final_url = r"C:\Users\Eric\Downloads\prescription_data.zip"
+
+opioids_raw = pd.read_csv(
+    final_url,
+    chunksize=10000000,
+    compression="zip",
+    iterator=True,
+    usecols=[
+        "BUYER_STATE",
+        "BUYER_COUNTY",
+        "TRANSACTION_DATE",
+        "CALC_BASE_WT_IN_GM",
+        "MME_Conversion_Factor",
+    ],
+)
+
+# states from the control function
+tmp = []
+for data in opioids_raw:
+    tmpdata = data[data["BUYER_STATE"].isin(final_states)]
+    tmp.append(tmpdata)
+opioids_data = pd.concat(tmp)
+opioids_data.to_csv("opioids_data.csv", encoding="utf-8", index=False)
+
+
+# Closing Final Chunking Process
 
 
 # overdose deaths dataset
@@ -130,9 +240,10 @@ overdose_deaths = pd.read_csv(
 )
 # filtering the states
 states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "CO"]
+
 # overdose_df1 = overdose_df[overdose_df["County"].isin(states)]
 overdose_deaths2 = overdose_deaths[
-    overdose_deaths["County"].str.contains("|".join(states))
+    overdose_deaths["County"].str.contains("|".join(final_states))
 ]
 overdose_copy = overdose_deaths2.copy()
 overdose_copy[["County", "State"]] = overdose_deaths2.County.str.split(

@@ -55,6 +55,58 @@ opioids_fips_pop_death_cleaned[
 #'Texas': ['Colorado', 'Utah', 'Georgia'] DC, UT, CO
 
 # add datetime conversion code, not priority right now
+states_FL = {
+    "Florida": "FL",
+    "West Virginia": "WV",
+    "Vermont": "VT",
+    "Delaware": "DE ",
+    "Hawaii": "HI",
+    "Montana": "MT",
+    "Pennsylvania": "PA",
+    "New Hampshire": "NH",
+    "South Carolina": "SC",
+    "New Mexico": "NM",
+}
+states_WA = {
+    "Washington": "WA",
+    "Louisiana": "LA",
+    "Maryland": "MD",
+    "Oklahoma": "OK",
+    "Indiana": "IN",
+    "Idaho": "ID",
+    "Minnesota": "MN",
+    "Nebraska": "NE",
+    "Nevada": "NV",
+    "Virginia": "WV",
+}
+states_TX = {
+    "Texas": "TX",
+    "Utah": "UT",
+    "Georgia": "GA",
+    "Colorado": "CO",
+    "California": "CA",
+    "North Dakota": "ND",
+    "Illinois": "IL",
+    "Louisiana": "LA",
+    "Maryland": "MD",
+    "Oklahoma": "OK",
+}
+
+states_pairings = {"TX": [], "WA": [], "FL": []}
+
+for states_dn in [states_FL, states_WA, states_TX]:
+
+    new_ls = []
+
+    for state in states_dn:
+
+        new_ls.append(states_dn[state])
+
+    target = opioids_fips_pop_death_cleaned.loc[
+        opioids_fips_pop_death_cleaned["BUYER_STATE_x"].isin(new_ls), :
+    ]
+
+    target.to_csv(f"{new_ls[0] +' subsetfinalized'}.csv", encoding="utf-8", index=False)
 
 states_dn = {
     "FL": ["FL", "ME", "WV", "VT"],
