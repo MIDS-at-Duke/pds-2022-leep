@@ -2,41 +2,74 @@ import pandas as pd
 import datetime as dt
 import numpy as np
 
-url = r"C:\Users\Eric\Downloads\pds-2022-leep\00_source_data\opioids_data.csv"
+url = r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\pds-2022-leep\00_source_data\opioids_data.csv"
 
 states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "CO"]
 
-# Final Buffer States 
+# Final Buffer States
 
-final_states = ['WV',
- 'SC',
- 'DE ',
- 'HI',
- 'NM',
- 'GA',
- 'IN',
- 'MN',
- 'VT',
- 'OK',
- 'LA',
- 'UT',
- 'MD',
- 'FL',
- 'NV',
- 'PA',
- 'IL',
- 'CO',
- 'MT',
- 'TX',
- 'WA',
- 'CA',
- 'NH',
- 'ID',
- 'ND',
- 'NE']
+final_states = [
+    "WV",
+    "SC",
+    "DE ",
+    "HI",
+    "NM",
+    "GA",
+    "IN",
+    "MN",
+    "VT",
+    "OK",
+    "LA",
+    "UT",
+    "MD",
+    "FL",
+    "NV",
+    "PA",
+    "IL",
+    "CO",
+    "MT",
+    "TX",
+    "WA",
+    "CA",
+    "NH",
+    "ID",
+    "ND",
+    "NE",
+]
+
 
 
 opioids_data = pd.read_csv(url)
+
+#Creating placeholder years to help Texas have actual years pre and post
+
+unique_counties_for_state = {}
+
+concat_me = [['BUYER_STATE', 'BUYER_COUNTY', 'TRANSACTION_DATE', 'CALC_BASE_WT_IN_GM',
+       'MME_Conversion_Factor']]
+
+for state in opioids_data['BUYER_STATE'].unique().tolist():
+
+    unique_counties_for_state[state] = opioids_data.loc[opioids_data['BUYER_STATE']==state,'BUYER_COUNTY'].unique().tolist()
+
+for state_key in unique_counties_for_state:
+
+    for county in unique_counties_for_state[state_key]:
+
+        for year in range(2003,2006):
+
+            # concat_me.append([state_key, county, f'1015{year}', 0, 0])
+
+            # opioids_data = opioids_data.append({'BUYER_STATE' : state_key, 'BUYER_COUNTY' : county, 'TRANSACTION_DATE' : f'1015{year}', 'CALC_BASE_WT_IN_GM' : 0,
+            # 'MME_Conversion_Factor': 0}, ignore_index=True)
+
+            concat_me.append([state_key, county, f'1015{year}',  0, 0])
+    
+df2 = pd.DataFrame(concat_me[1:], columns=concat_me[0])
+
+opioids_data = pd.concat([opioids_data, df2], sort=False)
+
+#closing operation here
 
 # Check if they states lists are identical
 assert final_states.sort() == (opioids_data["BUYER_STATE"].unique()).sort()
@@ -198,27 +231,34 @@ opioid_data_fips.to_csv("merge1.csv", encoding="utf-8", index=False)
 
 # Merging populations, oddity : year becomes a float
 
+# pop_counties has too many columns, only going to keep essential ones
+
 opioid_data_fips_pop = pd.merge(
     opioid_data_fips,
-    pop_counties,
+    pop_counties_new,
     how="left",
     left_on=["fips", "TRANSACTION_YEAR"],
     right_on=["countyfips", "year"],
     indicator=True,
 )
-opioid_data_fips_pop = opioid_data_fips_pop.drop(
-    columns=[
-        "_merge",
-        "county_name",
-        "STATE",
-        "COUNTY",
-        "NAME",
-        "variable",
-        "TRANSACTION_DATE",
-        "CALC_BASE_WT_IN_GM",
-        "MME_Conversion_Factor",
-    ]
+
+opioid_data_fips_pop = pd.merge(
+    opioid_data_fips,
+    pop_counties_old,
+    how="left",
+    left_on=["fips", "TRANSACTION_YEAR"],
+    right_on=["fips", "year"],
+    indicator=True,
 )
+
+opioid_data_fips_pop.to_csv("opioid_fips_pop.csv", encoding="utf-8", index=False)
+
+
+# HERE I AM
+
+opioid_data_fips_pop = opioid_data_fips_pop.drop(columns="_merge")
+
+
 
 # inplace method
 
@@ -251,6 +291,12 @@ deaths_fips = deaths_fips.drop(columns="_merge")
 
 # deaths_fips.drop(columns="_merge", inplace=True)
 
+opioid_data_fips_pop.to_csv("opioid_fips_pop.csv", encoding="utf-8", index=False)
+deaths_fips.to_csv("deathfipsmerge.csv", encoding="utf-8", index=False)
+
+opioid_data_fips_pop =  pd.read_csv(r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\pds-2022-leep\00_source_data\opioid_fips_pop.csv")
+deaths_fips = pd.read_csv(r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\pds-2022-leep\00_source_data\deathfipsmerge.csv")
+
 opioid_data_fips_pop_deaths = pd.merge(
     opioid_data_fips_pop,
     deaths_fips,
@@ -263,11 +309,44 @@ opioid_data_fips_pop_deaths = pd.merge(
 
 # Early Writing
 
-states_FL = {'Florida':'FL', 'West Virginia': 'WV', 'Vermont': 'VT','Delaware': 'DE ','Hawaii': 'HI','Montana': 'MT','Pennsylvania': 'PA' ,'New Hampshire': 'NH','South Carolina': 'SC','New Mexico': 'NM'}
-states_WA={'Washington': 'WA','Louisiana': 'LA', 'Maryland': 'MD', 'Oklahoma': 'OK','Indiana': 'IN','Idaho': 'ID', 'Minnesota': 'MN','Nebraska': 'NE','Nevada': 'NV','Virginia': 'WV'}
-states_TX={'Texas': 'TX','Utah':'UT', 'Georgia':'GA', 'Colorado':'CO', 'California':'CA', 'North Dakota':'ND', 'Illinois':'IL','Louisiana':'LA','Maryland':'MD', 'Oklahoma':'OK'}
+states_FL = {
+    "Florida": "FL",
+    "West Virginia": "WV",
+    "Vermont": "VT",
+    "Delaware": "DE ",
+    "Hawaii": "HI",
+    "Montana": "MT",
+    "Pennsylvania": "PA",
+    "New Hampshire": "NH",
+    "South Carolina": "SC",
+    "New Mexico": "NM",
+}
+states_WA = {
+    "Washington": "WA",
+    "Louisiana": "LA",
+    "Maryland": "MD",
+    "Oklahoma": "OK",
+    "Indiana": "IN",
+    "Idaho": "ID",
+    "Minnesota": "MN",
+    "Nebraska": "NE",
+    "Nevada": "NV",
+    "Virginia": "WV",
+}
+states_TX = {
+    "Texas": "TX",
+    "Utah": "UT",
+    "Georgia": "GA",
+    "Colorado": "CO",
+    "California": "CA",
+    "North Dakota": "ND",
+    "Illinois": "IL",
+    "Louisiana": "LA",
+    "Maryland": "MD",
+    "Oklahoma": "OK",
+}
 
-states_pairings = {'TX' : [], 'WA' : [], 'FL' : []}
+states_pairings = {"TX": [], "WA": [], "FL": []}
 
 for states_dn in [states_FL, states_WA, states_TX]:
 
@@ -276,7 +355,7 @@ for states_dn in [states_FL, states_WA, states_TX]:
     for state in states_dn:
 
         new_ls.append(states_dn[state])
-        
+
     target = opioid_data_fips_pop_deaths.loc[
         opioid_data_fips_pop_deaths["BUYER_STATE_x"].isin(new_ls), :
     ]

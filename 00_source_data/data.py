@@ -51,11 +51,30 @@ popstates = pd.read_csv(
 )
 popstates.head(25)
 
+states_mapper = pd.read_csv(
+    "https://worldpopulationreview.com/static/states/name-abbr.csv", header=None
+)
 
-pop_counties = pd.read_csv(
+state, abb = states_mapper[0].to_list(), states_mapper[1].to_list()
+
+states_map = {}
+
+for i in range(0, len(state)):
+
+    states_map[state[i]] = abb[i]
+
+states_map
+
+pop_counties_new = pd.read_csv(
     "https://raw.githubusercontent.com/wpinvestigative/arcos-api/master/data/pop_counties_20062014.csv"
 )
-pop_counties.head(25)
+pop_counties_new.head(25)
+
+
+pop_counties_old = pd.read_excel(
+    "https://repository.duke.edu/download/f49b199b-1496-4636-91f3-36226c8e7f80",
+    usecols=["fips", "year", "tot_pop"],
+)
 
 
 # overdose data
@@ -206,7 +225,7 @@ final_states = list(states_set)
 
 # Final Chunking process
 
-final_url = r"C:\Users\Eric\Downloads\prescription_data.zip"
+final_url = r"C:\Users\ericr\Downloads\prescription_data.zip"
 
 opioids_raw = pd.read_csv(
     final_url,
@@ -236,7 +255,7 @@ opioids_data.to_csv("opioids_data.csv", encoding="utf-8", index=False)
 
 # overdose deaths dataset
 overdose_deaths = pd.read_csv(
-    r"C:\Users\Eric\Downloads\pds-2022-leep\00_source_data\overdose_df.csv"
+    r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\pds-2022-leep\00_source_data\overdose_df.csv"
 )
 # filtering the states
 states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "CO"]
