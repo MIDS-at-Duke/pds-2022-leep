@@ -4,6 +4,7 @@ importing all raw data for the analysis and filtering the useful columns
 import pandas as pd
 import datetime as dt
 
+
 # Fips codes csv
 fips = pd.read_csv(
     "https://raw.githubusercontent.com/kjhealy/fips-codes/master/state_and_county_fips_master.csv"
@@ -11,45 +12,32 @@ fips = pd.read_csv(
 fips.sample(6)
 fips.columns
 
-# Opioids Description Dataset
-# url = "https://d2ty8gaf6rmowa.cloudfront.net/dea-pain-pill-database/bulk/arcos_all_washpost.tsv.gz"
-url = r"C:\Users\Eric\Downloads\prescription_data.zip"
-
-opioids_raw = pd.read_csv(
-    url,
-    chunksize=10000000,
-    compression="zip",
-    iterator=True,
-    usecols=[
-        "BUYER_STATE",
-        "BUYER_COUNTY",
-        "TRANSACTION_DATE",
-        "CALC_BASE_WT_IN_GM",
-        "MME_Conversion_Factor",
-    ],
-)
-
-# states from the control function
-states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "CO"]
-tmp = []
-for data in opioids_raw:
-    tmpdata = data[data["BUYER_STATE"].isin(states)]
-    tmp.append(tmpdata)
-opioids_data = pd.concat(tmp)
-opioids_data.to_csv("opioids_data.csv", encoding="utf-8", index=False)
-
-# For the following code to work on your local machines due to the ram overhead issue,
-# import the csv you got from the above code block, I'll leave it commented for now
-
-# opioids_data = pd.read_csv("opioids_data.csv")
-
-
 # The populations
 
 popstates = pd.read_csv(
     "https://raw.githubusercontent.com/wpinvestigative/arcos-api/master/data/pop_states_20062014.csv"
 )
 popstates.head(25)
+
+# We needed more years for population counties
+
+pop_counties_new = pd.read_csv(
+    "https://raw.githubusercontent.com/wpinvestigative/arcos-api/master/data/pop_counties_20062014.csv"
+)
+pop_counties_new.head(25)
+
+
+# pop_counties_old = pd.read_excel(
+#     "https://repository.duke.edu/download/f49b199b-1496-4636-91f3-36226c8e7f80",
+#     usecols=["fips", "year", "tot_pop"],
+# )
+
+# for Texas:
+ pop_counties_old = pd.read_csv(
+    "https://www2.census.gov/programs-surveys/popest/datasets/2000-2006/counties/totals/co-est2006-alldata.csv")
+
+
+# dictionary of states and abbreviations
 
 states_mapper = pd.read_csv(
     "https://worldpopulationreview.com/static/states/name-abbr.csv", header=None
@@ -63,19 +51,6 @@ for i in range(0, len(state)):
 
     states_map[state[i]] = abb[i]
 
-states_map
-
-pop_counties_new = pd.read_csv(
-    "https://raw.githubusercontent.com/wpinvestigative/arcos-api/master/data/pop_counties_20062014.csv"
-)
-pop_counties_new.head(25)
-
-
-pop_counties_old = pd.read_excel(
-    "https://repository.duke.edu/download/f49b199b-1496-4636-91f3-36226c8e7f80",
-    usecols=["fips", "year", "tot_pop"],
-)
-
 
 # overdose data
 overdose_2006 = pd.read_csv(
@@ -85,7 +60,9 @@ overdose_2006 = pd.read_csv(
 
 overdose_2006.head(10)
 
-## Constant States Selection
+## Constant States Selection, the comparison states generator
+
+
 def constant_states(states, num_constant_states, df_selection):
     """
     The function will return the Constant States we want to compare with the states of our interest.
@@ -257,8 +234,6 @@ opioids_data.to_csv("opioids_data.csv", encoding="utf-8", index=False)
 overdose_deaths = pd.read_csv(
     r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\pds-2022-leep\00_source_data\overdose_df.csv"
 )
-# filtering the states
-states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "CO"]
 
 # overdose_df1 = overdose_df[overdose_df["County"].isin(states)]
 overdose_deaths2 = overdose_deaths[
@@ -281,4 +256,4 @@ overdose_grouped = (
     overdose_copy.groupby(["County Code", "Year"])["Deaths"].sum().reset_index()
 )
 
-# final dataset to be used is overdose_copy
+# final overdose deaths dataset to be used is overdose_copy

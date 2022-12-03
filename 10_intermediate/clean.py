@@ -1,10 +1,9 @@
 import pandas as pd
 import datetime as dt
 import numpy as np
+import gc
 
 url = r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\pds-2022-leep\00_source_data\opioids_data.csv"
-
-states = ["FL", "WA", "TX", "ME", "WV", "VT", "LA", "MD", "UT", "OK", "GA", "CO"]
 
 # Final Buffer States
 
@@ -38,53 +37,17 @@ final_states = [
 ]
 
 
-
-opioids_data = pd.read_csv(url)
-
-#Creating placeholder years to help Texas have actual years pre and post
-
-unique_counties_for_state = {}
-
-concat_me = [['BUYER_STATE', 'BUYER_COUNTY', 'TRANSACTION_DATE', 'CALC_BASE_WT_IN_GM',
-       'MME_Conversion_Factor']]
-
-for state in opioids_data['BUYER_STATE'].unique().tolist():
-
-    unique_counties_for_state[state] = opioids_data.loc[opioids_data['BUYER_STATE']==state,'BUYER_COUNTY'].unique().tolist()
-
-for state_key in unique_counties_for_state:
-
-    for county in unique_counties_for_state[state_key]:
-
-        for year in range(2003,2006):
-
-            # concat_me.append([state_key, county, f'1015{year}', 0, 0])
-
-            # opioids_data = opioids_data.append({'BUYER_STATE' : state_key, 'BUYER_COUNTY' : county, 'TRANSACTION_DATE' : f'1015{year}', 'CALC_BASE_WT_IN_GM' : 0,
-            # 'MME_Conversion_Factor': 0}, ignore_index=True)
-
-            concat_me.append([state_key, county, f'1015{year}',  0, 0])
-    
-df2 = pd.DataFrame(concat_me[1:], columns=concat_me[0])
-
-opioids_data = pd.concat([opioids_data, df2], sort=False)
-
-#closing operation here
+first_view = pd.read_csv(url, usecols=["BUYER_COUNTY", "BUYER_STATE"])
 
 # Check if they states lists are identical
-assert final_states.sort() == (opioids_data["BUYER_STATE"].unique()).sort()
+assert final_states.sort() == (first_view["BUYER_STATE"].unique()).sort()
 
+del first_view
+gc.collect()
+
+opioids_data_chunker = pd.read_csv(url, chunksize=1000000, iterator=True)
 
 # Formatting the dates
-
-opioids_data["TRANSACTION_DATE"].dtype  # We identified an object type
-opioids_data["TRANSACTION_DATE"].sample(10)
-
-# The values clearly do not have the same character length,
-# and they will be converted to strings, in order to easily add 0s
-# to the shorter values
-
-opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("str")
 
 
 def date_len(element):
@@ -94,49 +57,6 @@ def date_len(element):
     cleaning.
     """
     return len(element)
-
-
-# Creating a new column to identify the shorter strings
-opioids_data["date_length"] = opioids_data["TRANSACTION_DATE"].apply(date_len)
-opioids_data[["TRANSACTION_DATE", "date_length"]].sample(10)
-
-# Date strings with 8,9,10, and 7 characters.
-opioids_data["date_length"].value_counts()
-
-# Turning them all to floats and then back to integers to easily remove the decimal points,
-# then back to strings.
-# Now verify the new value_counts of the lengths after recalculating the date_length column
-opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("float")
-opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("int")
-opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("str")
-
-# Change successful, only 8 and 7 character strings.
-# Now we just have to fix the 7 date strings.
-opioids_data["date_length"] = opioids_data["TRANSACTION_DATE"].apply(date_len)
-opioids_data["date_length"].value_counts()
-
-# adding the 0s to the shorter strings, so they have 8 characters
-opioids_data.loc[opioids_data.loc[:, "date_length"] == 7, "TRANSACTION_DATE"] = (
-    "0" + opioids_data.loc[opioids_data.loc[:, "date_length"] == 7, "TRANSACTION_DATE"]
-)
-
-# testing the changes
-opioids_data["date_length"] = opioids_data["TRANSACTION_DATE"].apply(date_len)
-assert sum(opioids_data["date_length"] == 8) == opioids_data.shape[0]
-
-# assuming the assert passed, all of our date strings now have 8 characters.
-# dropping the placeholder date_length column
-opioids_data = opioids_data.drop(columns="date_length")
-
-# extracting the year for easy referencing and grouping
-opioids_data["TRANSACTION_YEAR"] = opioids_data["TRANSACTION_DATE"].str.extract(
-    "[0-9]{4}(20[0-9]{2})"
-)
-
-opioids_data["TRANSACTION_YEAR"] = opioids_data["TRANSACTION_YEAR"].astype(int)
-
-# datetime version of TRANSACTION_DATE column creation
-# This is crucial for filtering by months
 
 
 def insert_slash(element):
@@ -150,35 +70,112 @@ def insert_slash(element):
     return s[:2] + "/" + s[2:4] + "/" + s[4:]
 
 
-opioids_data["TRANSACTION_DATE_DT"] = opioids_data["TRANSACTION_DATE"].apply(
-    insert_slash
-)
+to_concat = []
 
-opioids_data["TRANSACTION_DATE_DT"] = pd.to_datetime(
-    opioids_data["TRANSACTION_DATE_DT"]
-)
+for opioids_data in opioids_data_chunker:
 
-# final check for the dates
-opioids_data[["TRANSACTION_DATE_DT", "TRANSACTION_YEAR"]].head(10)
+    opioids_data["TRANSACTION_DATE"].dtype  # We identified an object type
+    opioids_data["TRANSACTION_DATE"].sample(10)
 
+    # The values clearly do not have the same character length,
+    # and they will be converted to strings, in order to easily add 0s
+    # to the shorter values
 
-# create a MME per WT to standardize opioids per transaction
+    opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("str")
 
-opioids_data["CALC_BASE_WT_IN_GM"].isnull().values.any()
+    # def date_len(element):
+    #     """
+    #     This function counts the characters in the TRANSACTION_DATE.
+    #     A full date should have 8 characters, any less or more necessitates
+    #     cleaning.
+    #     """
+    #     return len(element)
 
-opioids_data["MME_Conversion_Factor"].isnull().values.any()
+    # Creating a new column to identify the shorter strings
+    opioids_data["date_length"] = opioids_data["TRANSACTION_DATE"].apply(date_len)
+    opioids_data[["TRANSACTION_DATE", "date_length"]].sample(10)
 
+    # Date strings with 8,9,10, and 7 characters.
+    opioids_data["date_length"].value_counts()
 
-opioids_data["Opioids_Shipment_IN_GM"] = opioids_data["CALC_BASE_WT_IN_GM"].astype(
-    "float"
-) * opioids_data["MME_Conversion_Factor"].astype("float")
+    # Turning them all to floats and then back to integers to easily remove the decimal points,
+    # then back to strings.
+    # Now verify the new value_counts of the lengths after recalculating the date_length column
+    opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("float")
+    opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("int")
+    opioids_data["TRANSACTION_DATE"] = opioids_data["TRANSACTION_DATE"].astype("str")
 
-opioids_data.sample(10)
+    # Change successful, only 8 and 7 character strings.
+    # Now we just have to fix the 7 date strings.
+    opioids_data["date_length"] = opioids_data["TRANSACTION_DATE"].apply(date_len)
+    opioids_data["date_length"].value_counts()
 
+    # adding the 0s to the shorter strings, so they have 8 characters
+    opioids_data.loc[opioids_data.loc[:, "date_length"] == 7, "TRANSACTION_DATE"] = (
+        "0"
+        + opioids_data.loc[opioids_data.loc[:, "date_length"] == 7, "TRANSACTION_DATE"]
+    )
 
-# FIPS code merging into Opioids dataset
-opioids_data["BUYER_COUNTY"] = opioids_data["BUYER_COUNTY"].astype(str) + " county"
-opioids_data["BUYER_COUNTY"] = opioids_data["BUYER_COUNTY"].str.lower()
+    # testing the changes
+    opioids_data["date_length"] = opioids_data["TRANSACTION_DATE"].apply(date_len)
+    assert sum(opioids_data["date_length"] == 8) == opioids_data.shape[0]
+
+    # assuming the assert passed, all of our date strings now have 8 characters.
+    # dropping the placeholder date_length column
+    opioids_data = opioids_data.drop(columns="date_length")
+
+    # extracting the year for easy referencing and grouping
+    opioids_data["TRANSACTION_YEAR"] = opioids_data["TRANSACTION_DATE"].str.extract(
+        "[0-9]{4}(20[0-9]{2})"
+    )
+
+    opioids_data["TRANSACTION_YEAR"] = opioids_data["TRANSACTION_YEAR"].astype(int)
+
+    # datetime version of TRANSACTION_DATE column creation
+    # This is crucial for filtering by months
+
+    # def insert_slash(element):
+    #     """
+    #     This function is to insert the slashes to make the dates
+    #     more readable.
+    #     """
+
+    #     s = element
+
+    #     return s[:2] + "/" + s[2:4] + "/" + s[4:]
+
+    opioids_data["TRANSACTION_DATE_DT"] = opioids_data["TRANSACTION_DATE"].apply(
+        insert_slash
+    )
+
+    opioids_data["TRANSACTION_DATE_DT"] = pd.to_datetime(
+        opioids_data["TRANSACTION_DATE_DT"]
+    )
+
+    # final check for the dates
+    opioids_data[["TRANSACTION_DATE_DT", "TRANSACTION_YEAR"]].head(10)
+
+    # create a MME per WT to standardize opioids per transaction
+
+    opioids_data["CALC_BASE_WT_IN_GM"].isnull().values.any()
+
+    opioids_data["MME_Conversion_Factor"].isnull().values.any()
+
+    opioids_data["Opioids_Shipment_IN_GM"] = opioids_data["CALC_BASE_WT_IN_GM"].astype(
+        "float"
+    ) * opioids_data["MME_Conversion_Factor"].astype("float")
+
+    # For future FIPS code merging into Opioids dataset
+    opioids_data["BUYER_COUNTY"] = opioids_data["BUYER_COUNTY"].astype(str) + " county"
+    opioids_data["BUYER_COUNTY"] = opioids_data["BUYER_COUNTY"].str.lower()
+
+    to_concat.append(opioids_data)
+
+opioids_data = pd.concat(to_concat)
+
+del opioids_data_chunker, to_concat
+gc.collect()
+
 
 # Modifying bad county names in general
 
@@ -222,9 +219,12 @@ opioid_data_fips = pd.merge(
     opioids_data, fips, how="left", on=["BUYER_STATE", "BUYER_COUNTY"], indicator=True
 )
 
-opioid_data_fips = opioid_data_fips.drop(columns="_merge")
+opioid_data_fips.drop(columns="_merge", inplace=True)
 
 # opioid_data_fips.drop(columns="_merge", inplace=True)
+
+del opioids_data
+gc.collect()
 
 # Our Backup
 opioid_data_fips.to_csv("merge1.csv", encoding="utf-8", index=False)
@@ -232,6 +232,10 @@ opioid_data_fips.to_csv("merge1.csv", encoding="utf-8", index=False)
 # Merging populations, oddity : year becomes a float
 
 # pop_counties has too many columns, only going to keep essential ones
+
+pop_counties_new = pd.read_csv(
+    "https://raw.githubusercontent.com/wpinvestigative/arcos-api/master/data/pop_counties_20062014.csv"
+)
 
 opioid_data_fips_pop = pd.merge(
     opioid_data_fips,
@@ -242,41 +246,30 @@ opioid_data_fips_pop = pd.merge(
     indicator=True,
 )
 
-opioid_data_fips_pop = pd.merge(
-    opioid_data_fips,
-    pop_counties_old,
-    how="left",
-    left_on=["fips", "TRANSACTION_YEAR"],
-    right_on=["fips", "year"],
-    indicator=True,
-)
+opioid_data_fips_pop.drop(columns="_merge", inplace=True)
+
+# Not yet fully tested to work with members' implementations
+# opioid_data_fips_pop = pd.merge(
+#     opioid_data_fips,
+#     pop_counties_old,
+#     how="left",
+#     left_on=["fips", "TRANSACTION_YEAR"],
+#     right_on=["fips", "year"],
+#     indicator=True,
+# )
+
+del opioid_data_fips
+gc.collect()
 
 opioid_data_fips_pop.to_csv("opioid_fips_pop.csv", encoding="utf-8", index=False)
 
 
-# HERE I AM
-
-opioid_data_fips_pop = opioid_data_fips_pop.drop(columns="_merge")
 
 
-
-# inplace method
-
-# opioid_data_fips_pop.drop(
-#     columns=[
-#         "_merge",
-#         "county_name",
-#         "STATE",
-#         "COUNTY",
-#         "NAME",
-#         "variable",
-#         "TRANSACTION_DATE",
-#         "CALC_BASE_WT_IN_GM",
-#         "MME_Conversion_Factor",
-#     ], inplace=True
-# )
 
 # Merging the deaths with FIPS first, then with opioid_data_fips_pop
+
+overdose_grouped = pd.read_csv(r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\pds-2022-leep\10_intermediate\overdosegrouped.csv")
 
 deaths_fips = pd.merge(
     overdose_grouped,
@@ -287,15 +280,14 @@ deaths_fips = pd.merge(
     indicator=True,
 )
 
-deaths_fips = deaths_fips.drop(columns="_merge")
+deaths_fips.drop(columns="_merge", inplace=True)
 
-# deaths_fips.drop(columns="_merge", inplace=True)
-
-opioid_data_fips_pop.to_csv("opioid_fips_pop.csv", encoding="utf-8", index=False)
 deaths_fips.to_csv("deathfipsmerge.csv", encoding="utf-8", index=False)
 
-opioid_data_fips_pop =  pd.read_csv(r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\pds-2022-leep\00_source_data\opioid_fips_pop.csv")
-deaths_fips = pd.read_csv(r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\pds-2022-leep\00_source_data\deathfipsmerge.csv")
+# If need to write csvs at this point :
+# opioid_data_fips_pop =  pd.read_csv(r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\pds-2022-leep\00_source_data\opioid_fips_pop.csv")
+# deaths_fips = pd.read_csv(r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\pds-2022-leep\00_source_data\deathfipsmerge.csv")
+
 
 opioid_data_fips_pop_deaths = pd.merge(
     opioid_data_fips_pop,
@@ -306,6 +298,8 @@ opioid_data_fips_pop_deaths = pd.merge(
     indicator=True,
 )
 
+del opioid_data_fips_pop, deaths_fips
+gc.collect()
 
 # Early Writing
 
@@ -375,6 +369,9 @@ missing_deaths = opioid_data_fips_pop_deaths.loc[
 ]
 missing_deaths["fips"].unique()
 
+del missing_deaths
+gc.collect()
+
 # Dropping the nan counties
 opioid_data_fips_pop_deaths_nonan = opioid_data_fips_pop_deaths[
     ~(opioid_data_fips_pop_deaths["BUYER_COUNTY_x"].isin(["nan county", np.nan]))
@@ -415,17 +412,46 @@ for state in states_dn:
     target.to_csv(f"{state +' subsetcleaned'}.csv", encoding="utf-8", index=False)
 
 
-# group by state, county and sum of opioids shipment make it opioids clean : pending to add a year so that its by year
-opioid_data_fips_pop_deaths = (
-    opioid_data_fips.groupby(["BUYER_STATE", "BUYER_COUNTY"])["Opioids_Shipment_IN_GM"]
-    .sum()
-    .reset_index()
-)
+###########################################################################################
 
-# 🚩 DC has a problem: Investigating DC data
+# The grouping happens on  analysis.py,
+# the other notes below are for future reference and improvements
+
+###########################################################################################
 
 
-# Diagnostics Code
+### Demo of implementing the code to fix the lacking deaths years for Texas:
+
+# Creating placeholder years to help Texas have actual years pre and post
+
+# unique_counties_for_state = {}
+
+# concat_me = [['BUYER_STATE', 'BUYER_COUNTY', 'TRANSACTION_DATE', 'CALC_BASE_WT_IN_GM',
+#        'MME_Conversion_Factor']]
+
+# for state in opioids_data['BUYER_STATE'].unique().tolist():
+
+#     unique_counties_for_state[state] = opioids_data.loc[opioids_data['BUYER_STATE']==state,'BUYER_COUNTY'].unique().tolist()
+
+# for state_key in unique_counties_for_state:
+
+#     for county in unique_counties_for_state[state_key]:
+
+#         for year in range(2003,2006):
+
+#             # concat_me.append([state_key, county, f'1015{year}', 0, 0])
+
+#             # opioids_data = opioids_data.append({'BUYER_STATE' : state_key, 'BUYER_COUNTY' : county, 'TRANSACTION_DATE' : f'1015{year}', 'CALC_BASE_WT_IN_GM' : 0,
+#             # 'MME_Conversion_Factor': 0}, ignore_index=True)
+
+#             concat_me.append([state_key, county, f'1015{year}',  0, 0]) # adds the empty years that Emma needed
+
+# df2 = pd.DataFrame(concat_me[1:], columns=concat_me[0])
+
+# opioids_data = pd.concat([opioids_data, df2], sort=False)
+
+
+# Diagnostics Code : Troubleshooting past issues
 
 # opioid_data_fips['fips'].head(10) - Revealed it was a float column
 
@@ -438,8 +464,8 @@ opioid_data_fips_pop_deaths = (
 # opioid_data_fips.loc[opioid_data_fips['_merge']=='left_only', 'BUYER_COUNTY'].unique()
 
 
-# LA : ascension county ->
-# opioid_data_fips.loc[(opioid_data_fips['BUYER_COUNTY'] == 'nan county') | (opioid_data_fips['BUYER_COUNTY'].isnull())]
+# Writing half of the assert function we were initially planning on using, if not
+# for time constraints
 
 # def asserting_left_only(df):
 
