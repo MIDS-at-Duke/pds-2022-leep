@@ -1,6 +1,7 @@
 import pandas as pd
 import datetime as dt
 import numpy as np
+import gc
 
 # The cleaning continues here after
 
@@ -8,7 +9,7 @@ import numpy as np
 
 opioid_data_fips_pop_deaths_nonan = pd.read_csv(
     "mergescompletedwithzeronancounties.csv",
-    chunksize=10000000,
+    chunksize=1000000,
     iterator=True,
     usecols=[
         "BUYER_STATE_x",
@@ -30,15 +31,16 @@ for data in opioid_data_fips_pop_deaths_nonan:
 
 opioids_fips_pop_death_cleaned = pd.concat(tmp)
 
+del tmp
+gc.collect()
+
 opioids_fips_pop_death_cleaned.sample(10)
 
 opioids_fips_pop_death_cleaned.dtypes
 
 opioids_fips_pop_death_cleaned.isna().sum()
 
-# Mission Success after Vejigantes knows how many crashes
-
-# Opioids Shipment divided by population
+# Opioids Shipment divided by population, recalculated for typing
 
 opioids_fips_pop_death_cleaned[
     "opioid_shipment_population_ratio"
@@ -55,59 +57,59 @@ opioids_fips_pop_death_cleaned[
 #'Texas': ['Colorado', 'Utah', 'Georgia'] DC, UT, CO
 
 # add datetime conversion code, not priority right now
-
-states_dn = {
-    "FL": ["FL", "ME", "WV", "VT"],
-    "WA": ["WA", "LA", "MD", "OK"],
-    "TX": ["TX", "GA", "UT", "CO"],
+states_FL = {
+    "Florida": "FL",
+    "West Virginia": "WV",
+    "Vermont": "VT",
+    "Delaware": "DE ",
+    "Hawaii": "HI",
+    "Montana": "MT",
+    "Pennsylvania": "PA",
+    "New Hampshire": "NH",
+    "South Carolina": "SC",
+    "New Mexico": "NM",
 }
-for state in states_dn:
+states_WA = {
+    "Washington": "WA",
+    "Louisiana": "LA",
+    "Maryland": "MD",
+    "Oklahoma": "OK",
+    "Indiana": "IN",
+    "Idaho": "ID",
+    "Minnesota": "MN",
+    "Nebraska": "NE",
+    "Nevada": "NV",
+    "Virginia": "WV",
+}
+states_TX = {
+    "Texas": "TX",
+    "Utah": "UT",
+    "Georgia": "GA",
+    "Colorado": "CO",
+    "California": "CA",
+    "North Dakota": "ND",
+    "Illinois": "IL",
+    "Louisiana": "LA",
+    "Maryland": "MD",
+    "Oklahoma": "OK",
+}
+
+states_pairings = {"TX": [], "WA": [], "FL": []}
+
+for states_dn in [states_FL, states_WA, states_TX]:
+
+    new_ls = []
+
+    for state in states_dn:
+
+        new_ls.append(states_dn[state])
 
     target = opioids_fips_pop_death_cleaned.loc[
-        opioids_fips_pop_death_cleaned["BUYER_STATE_x"].isin(states_dn[state]), :
+        opioids_fips_pop_death_cleaned["BUYER_STATE_x"].isin(new_ls), :
     ]
 
-    target.to_csv(f"{state +' subsetmaximized'}.csv", encoding="utf-8", index=False)
+    target.to_csv(f"{new_ls[0] +' subsetfinalized'}.csv", encoding="utf-8", index=False)
 
 
-############## group by code for the states #########################
 
 
-##################################################################
-
-
-# group by state, county and sum of opioids shipment make it opioids clean : pending to add a year so that its by year
-opioid_data_fips_pop_deaths = (
-    opioid_data_fips.groupby(["BUYER_STATE", "BUYER_COUNTY"])["Opioids_Shipment_IN_GM"]
-    .sum()
-    .reset_index()
-)
-
-# 🚩 DC has a problem: Investigating DC data
-
-
-# Diagnostics Code
-
-# opioid_data_fips['fips'].head(10) - Revealed it was a float column
-
-# opioid_data_fips['fips'].value_counts(dropna=False) -  Revealed 5228720 NANS values
-
-# fips[fips['BUYER_STATE']=='FL'] - Took this as a case study, we wanted "saint johns county" from it
-
-# fips.loc[fips['BUYER_STATE']=='FL','BUYER_COUNTY'].unique() - "saint johns" was "st. johns" in the fips
-
-# opioid_data_fips.loc[opioid_data_fips['_merge']=='left_only', 'BUYER_COUNTY'].unique()
-
-
-# LA : ascension county ->
-# opioid_data_fips.loc[(opioid_data_fips['BUYER_COUNTY'] == 'nan county') | (opioid_data_fips['BUYER_COUNTY'].isnull())]
-
-# def asserting_left_only(df):
-
-#     assert len(df.loc[df['_merge']=='left_only', 'BUYER_COUNTY'].unique()) == 2
-
-#     for null_val in df.loc[df['_merge']=='left_only', 'BUYER_COUNTY'].unique():
-
-#         assert null_val in ['nan county', np.nan]
-
-#     pass
