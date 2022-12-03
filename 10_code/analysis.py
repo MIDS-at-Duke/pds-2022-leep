@@ -309,6 +309,85 @@ target = "Overdose Death Rate"
 chart = diff_diff(WA, yvar, xvar, 2012, analysis, target)
 chart
 
+# Texas
+# merging two pop datasets
+pop_counties = pd.read_csv(
+    "https://raw.githubusercontent.com/wpinvestigative/arcos-api/master/data/pop_counties_20062014.csv",
+    usecols=["countyfips", "year", "population"],
+)
+pop_2003 = pd.read_csv(
+    "/Users/emma/pds-2022-leep/00_source_data/2000_2006_pop.csv",
+    usecols=[
+        "state",
+        "county",
+        "popestimate2003",
+        "popestimate2004",
+        "popestimate2005",
+    ],
+)
+death = pd.read_csv("/Users/emma/pds-2022-leep/00_source_data/overdose_df.csv")
+fips = pd.read_csv(
+    "https://raw.githubusercontent.com/kjhealy/fips-codes/master/state_and_county_fips_master.csv"
+)
+fips = fips.rename({"fips": "countyfips", "name": "county"}, axis=1)
+pop_counties.year = pop_counties.year.astype("int")
+pop_counties.countyfips = pop_counties.countyfips.astype("int")
+pop_2003["county"] = pop_2003["county"].astype("str")
+pop_2003["county"] = pop_2003["county"].str.strip().str.zfill(3)
+pop_2003["state"] = pop_2003["state"].astype("str")
+pop_2003["state"] = pop_2003["state"].str.strip().str.zfill(2)
+pop_2003["fips"] = pop_2003["state"] + pop_2003["county"]
+pop_2003 = pop_2003.drop(pop_2003.columns[[0, 1]], axis=1)
+pop_2003 = pop_2003.rename(
+    {"popestimate2003": "2003", "popestimate2004": "2004", "popestimate2005": "2005"},
+    axis=1,
+)
+new = pd.melt(pop_2003, id_vars=["fips"], value_vars=["2003", "2004", "2005"])
+pop_3 = new.rename(
+    {"fips": "countyfips", "variable": "year", "value": "population"}, axis=1
+)
+pop_3.year = pop_3.year.astype("int")
+pop_3.countyfips = pop_3.countyfips.astype("int")
+pop_counties = pd.concat([pop_counties, pop_3], axis=0)
+death["County Code"] = death["County Code"].astype("int")
+death["Year"] = death["Year"].astype("int")
+death = death.drop(death.columns[[0, 1, 4, 5, 6]], axis=1)
+death = death.rename({"County Code": "countyfips", "Year": "year"}, axis=1)
+df1 = death.merge(pop_counties, how="left")
+df_death_capita = df1.merge(fips, how="left")
+
+# selecting TX constant states
+state = ["TX", "UT", "GA", "CO", "CA", "ND", "IL", "LA", "MD", "OK"]
+death_df = pd.DataFrame()
+for state in state:
+    state_df = df_death_capita.loc[df_death_capita["state"] == state, :]
+    death_df = pd.concat([death_df, state_df], axis=0)
+death_df["Deaths"] = death_df.Deaths.astype("float")
+death_df["death_rate"] = death_df["Deaths"] / death_df["population"]
+death_df["death_rate"] *= 100000
+death_df = death_df.rename({"state": "state_abbr"}, axis=1)
+death_df["policy"] = 0
+death_df.loc[death_df["year"] > 2007, "policy"] = 1
+death_df["state"] = 0
+death_df.loc[death_df["state_abbr"] == "TX", "state"] = 1
+
+# Pre-post
+xvar = "year"
+yvar = "death_rate"
+analysis = "Pre-Post Analysis For Texas"
+target = "Overdose Death Rate"
+fit, chart = pre_post(death_df, yvar, xvar, 2007, analysis, target, alpha=0.05)
+chart
+
+# Diff-Diff
+xvar = "year"
+yvar = "death_rate"
+analysis = "Difference-Difference Analysis For Texas"
+target = "Overdose Death Rate"
+chart = diff_diff(death_df, yvar, xvar, 2007, analysis, target, alpha=0.05)
+chart
+
+
 # Estimation
 
 
@@ -331,3 +410,42 @@ print(estimate_diff(WA, "opioid_shipment_population_ratio"))
 print(estimate_diff(WA, "death_rate"))
 print(estimate_diff(FL, "opioid_shipment_population_ratio"))
 print(estimate_diff(FL, "death_rate"))
+print(estimate_diff(death_df, "death_rate"))  # For Texas
+
+
+# Summary Statistics
+
+# Florida
+summarystat_fl = FL.drop(
+    ["Deaths", "Total shipment", "population", "TRANSACTION_YEAR"], axis=1
+)
+result_FL = summarystat_fl.groupby(
+    [
+        "state",
+        "policy",
+    ],
+    as_index=False,
+).agg(["mean", "median", "min", "max"])
+
+# Washington
+
+summarystat_wa = WA.drop(
+    ["Deaths", "Total shipment", "population", "TRANSACTION_YEAR"], axis=1
+)
+result_WA = summarystat_wa.groupby(
+    [
+        "state",
+        "policy",
+    ],
+    as_index=False,
+).agg(["mean", "median", "min", "max"])
+
+# Texas
+summarystat_tx = death_df.drop(death_df.columns[[0, 1, 2, 3, 4, 5]], axis=1)
+result_TX = summarystat_tx.groupby(
+    [
+        "state",
+        "policy",
+    ],
+    as_index=False,
+).agg(["mean", "median", "min", "max"])
