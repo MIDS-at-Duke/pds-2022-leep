@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 
 fl = pd.read_csv("/Users/emma/Downloads/Finality Subsets/FL subsetfinalized.csv")
-tx = pd.read_csv("/Users/emma/Downloads/Finality Subsets/TX subsetfinalized.csv")
 wa = pd.read_csv("/Users/emma/Downloads/Finality Subsets/WA subsetfinalized.csv")
 
 
@@ -43,7 +42,6 @@ def dataset(df, year, state):
 
 
 FL = dataset(fl, 2010, "FL")
-TX = dataset(tx, 2007, "TX")
 WA = dataset(wa, 2012, "WA")
 
 # Pre-Post
