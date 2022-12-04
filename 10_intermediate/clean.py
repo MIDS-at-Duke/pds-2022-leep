@@ -221,8 +221,6 @@ opioid_data_fips = pd.merge(
 
 opioid_data_fips.drop(columns="_merge", inplace=True)
 
-# opioid_data_fips.drop(columns="_merge", inplace=True)
-
 del opioids_data
 gc.collect()
 
@@ -246,7 +244,8 @@ opioid_data_fips_pop = pd.merge(
     indicator=True,
 )
 
-opioid_data_fips_pop.drop(columns="_merge", inplace=True)
+opioid_data_fips_pop.drop(columns=['BUYER_COUNTY_y', 'BUYER_STATE_y', 'countyfips', 'STATE', 'COUNTY',
+       'county_name', 'NAME', 'variable', 'year', '_merge'], inplace=True)
 
 # Not yet fully tested to work with members' implementations
 # opioid_data_fips_pop = pd.merge(
@@ -258,13 +257,10 @@ opioid_data_fips_pop.drop(columns="_merge", inplace=True)
 #     indicator=True,
 # )
 
-del opioid_data_fips
+del opioid_data_fips, pop_counties_new
 gc.collect()
 
 opioid_data_fips_pop.to_csv("opioid_fips_pop.csv", encoding="utf-8", index=False)
-
-
-
 
 
 # Merging the deaths with FIPS first, then with opioid_data_fips_pop
@@ -298,6 +294,7 @@ opioid_data_fips_pop_deaths = pd.merge(
     indicator=True,
 )
 
+opioid_data_fips_pop_deaths.drop(columns=['County Code', 'Year','BUYER_COUNTY', 'BUYER_STATE','_merge'], inplace=True)
 del opioid_data_fips_pop, deaths_fips
 gc.collect()
 
