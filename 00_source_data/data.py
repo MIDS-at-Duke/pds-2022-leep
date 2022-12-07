@@ -33,7 +33,7 @@ pop_counties_new.head(25)
 # )
 
 # for Texas:
- pop_counties_old = pd.read_csv(
+pop_counties_old = pd.read_csv(
     "https://www2.census.gov/programs-surveys/popest/datasets/2000-2006/counties/totals/co-est2006-alldata.csv")
 
 
@@ -131,7 +131,7 @@ states_dic = {
     "Minnesota": "MN",
     "Nebraska": "NE",
     "Nevada": "NV",
-    "Virginia": "WV",
+    "Virginia": "VA",
     "Texas": "TX",
     "Utah": "UT",
     "Georgia": "GA",
@@ -166,7 +166,7 @@ states_WA = {
     "Minnesota": "MN",
     "Nebraska": "NE",
     "Nevada": "NV",
-    "Virginia": "WV",
+    "Virginia": "VA",
 }
 states_TX = {
     "Texas": "TX",
