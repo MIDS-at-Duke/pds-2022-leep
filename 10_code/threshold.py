@@ -312,7 +312,7 @@ fl_data_post.to_csv('/Users/lorna/Documents/MIDS 2022/First Semester/720 Practic
 """ Turn into function to do WA"""
 
 #🚩 make function
-#Florida Overdose
+#WA Overdose
 WA_states = ["WA","LA","MD","OK","IN","ID","MN","NE","NV","VA"]
 WA_states_names = ["Washington", "Louisiana", "Maryland", "Oklahoma", "Indiana", "Idaho","Minnesota","Nebraska","Nevada","Virginia"]
  
@@ -396,12 +396,12 @@ pop_WA_final_clean.sort_values(by = ["state", "fips"], inplace=True)
 #merge with complete drug deaths 
 WA_merge_all_data = pd.merge(WA_overdose_complete,pop_WA_final_clean, on = ["fips","year"], how="left", indicator=True)
 WA_merge_all_data["_merge"].value_counts()
-WA_data_to_use = WA_merge_all_data[["state_x", "fips", "year", "County" , "population" , "Deaths"]].copy()
+WA_data_to_use = WA_merge_all_data[["state_x", "fips", "year", "County" , "population" , "deaths"]].copy()
 WA_data_to_use.rename(columns={"state_x" : "state"}, inplace=True)
 #pre data
-WA_data_pre = fl_data_to_use[(fl_data_to_use["year"] <= 2010)]
-
+WA_data_pre = WA_data_to_use[(WA_data_to_use["year"] <= 2010)]
+WA_data_pre.to_csv('/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/WA_pre.csv', index=False)
 #post data 
-WA_data_post = fl_data_to_use[(fl_data_to_use["year"] >= 2011)]
-#WA_data_post.to_csv('/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/WA_post.csv', index=False)
+WA_data_post = WA_data_to_use[(WA_data_to_use["year"] >= 2011)]
+WA_data_post.to_csv('/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/WA_post.csv', index=False)
 #🚩 some weird numbers in deaths data and missing population for  some counties, to be cross referenced
