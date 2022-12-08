@@ -9,36 +9,17 @@ wa = pd.read_csv("/Users/emma/Downloads/Finality Subsets/WA subsetfinalized.csv"
 def dataset(df, year, state):
     """make dataset ready to run diff-diff and pre-post for opioids"""
     df["TRANSACTION_YEAR"] = df["TRANSACTION_YEAR"].astype("int")
-    groupby_1 = df.groupby(
-        [
-            "BUYER_STATE_x",
-            "BUYER_COUNTY_x",
-            "TRANSACTION_YEAR",
-            "population",
-            "Deaths",
-        ],
+    df = df.groupby(
+        ["BUYER_STATE_x", "BUYER_COUNTY_x", "TRANSACTION_YEAR", "population", "Deaths"],
         as_index=False,
     )["opioid_shipment_population_ratio"].sum()
-    groupby_1["Total shipment"] = (
-        groupby_1["population"] * groupby_1["opioid_shipment_population_ratio"]
-    )
-    opioids_data = groupby_1.groupby(
-        [
-            "BUYER_STATE_x",
-            "TRANSACTION_YEAR",
-        ],
-        as_index=False,
-    )["population", "Deaths", "Total shipment"].sum()
-    opioids_data["death_rate"] = opioids_data["Deaths"] / opioids_data["population"]
-    opioids_data["death_rate"] *= 100000
-    opioids_data["opioid_shipment_population_ratio"] = (
-        opioids_data["Total shipment"] / opioids_data["population"]
-    )
-    opioids_data["policy"] = 0
-    opioids_data.loc[opioids_data["TRANSACTION_YEAR"] > year, "policy"] = 1
-    opioids_data["state"] = 0
-    opioids_data.loc[opioids_data["BUYER_STATE_x"] == state, "state"] = 1
-    return opioids_data
+    df["death_rate"] = df["Deaths"] / df["population"]
+    df["death_rate"] *= 100000
+    df["policy"] = 0
+    df.loc[df["TRANSACTION_YEAR"] > year, "policy"] = 1
+    df["state"] = 0
+    df.loc[df["BUYER_STATE_x"] == state, "state"] = 1
+    return df
 
 
 FL = dataset(fl, 2010, "FL")
