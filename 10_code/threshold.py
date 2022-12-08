@@ -198,5 +198,199 @@ final_tx_merge["_merge"].value_counts()
 
 #🚩 texas analysis still failing to concat 2003 and 2006
 
+"""
+implementing threshold for WA and FL
+"""
+#🚩 make function
+#Florida Overdose
+fl_states = ["FL","WV","VT","DE","HI","MT","PA", "NH","SC","NM"]
+fl_states_names = ["Florida","West Virginia","Vermont","Delaware","Hawaii", "Montana","Pennsylvania","New Hampshire","South Carolina","New Mexico"]
+
+states_FL = {
+    "Florida": "FL",
+    "West Virginia": "WV",
+    "Vermont": "VT",
+    "Delaware": "DE",
+    "Hawaii": "HI",
+    "Montana": "MT",
+    "Pennsylvania": "PA",
+    "New Hampshire": "NH",
+    "South Carolina": "SC",
+    "New Mexico": "NM",
+}
+
+fl_overdose = overdose_filtered[overdose_filtered["State"].isin(fl_states)].copy()
+fl_overdose.rename(columns={"County Code": "fips","State":"state"}, inplace=True)
+fl_overdose["fips"] = fl_overdose["fips"].astype(np.int64)
+fl_overdose["year"] = fl_overdose["Year"].astype(np.int64)
+fl_overdose.sort_values(by = ["state", "fips"], inplace=True)
+
+#drop years outside 2006 and 2014 range
+fl_overdose_range = fl_overdose[(fl_overdose["year"].between(2006, 2014))]
+
+#keep only those with full 9 years
+fips_in_fl = fl_overdose_range["fips"].unique()
+
+fl_compelete_list = []
+for county in fips_in_fl:
+    tmp = fl_overdose_range[(fl_overdose_range["fips"] == county)]
+    if len(tmp["year"]) ==9:
+        fl_compelete_list.append(tmp)
+        pass 
+fl_overdose_complete = pd.concat(fl_compelete_list)
+
+#check point
+assert len(fl_overdose_complete["year"].unique()) == 9
+
+assert (len(fl_overdose_complete["fips"].unique())*len(fl_overdose_complete["year"].unique())) == len(fl_overdose_complete["year"]) 
+
+#add population to it 
+#Adding 2006 to 2014 population data
+#Adding 2006 to 2014 population data
+pop_counties_new = pd.read_csv(
+    "https://raw.githubusercontent.com/wpinvestigative/arcos-api/master/data/pop_counties_20062014.csv",
+    usecols=["NAME", "year", "population"]
+)
+pop_counties_new[["County", "State"]] = pop_counties_new.NAME.str.split(",", n=1, expand=True)
+pop_counties_new["State"] = pop_counties_new.State.str.strip()
+
+pop_new = pop_counties_new[(pop_counties_new["State"].isin(fl_states_names))]
+
+fl_pop = pop_new[["State", "County", "year", "population"]]
+
+#introduce fips codes to population data
+fips_fl = fips[(fips["state"].isin(fl_states))].copy()
+fips_fl.rename(columns={"name" : "County"}, inplace=True)
+
+#add fips to population
+
+pop_fl_final_list = []
+for state in fl_states_names:
+    tmp = fl_pop[(fl_pop["State"] == state)]
+    currstate = states_FL[state]
+    tmp_fips = fips_fl[(fips_fl["state"] == currstate)]
+    tmp_merge = pd.merge(tmp,tmp_fips, on = "County", how = "left", indicator=True)
+    pop_fl_final_list.append(tmp_merge)
 
 
+pop_fl_final = pd.concat(pop_fl_final_list)
+pop_fl_final_clean = pop_fl_final[["state", "fips", "County", "year", "population"]].copy()
+pop_fl_final_clean.sort_values(by = ["state", "fips"], inplace=True)
+
+#✅ both 
+assert (len(pop_fl_final_clean["fips"].unique())*(len(pop_fl_final_clean["year"].unique()))) == len(pop_fl_final_clean["fips"]) 
+
+#merge with complete drug deaths 
+fl_merge_all_data = pd.merge(fl_overdose_complete,pop_fl_final_clean, on = ["fips","year"], how="left", indicator=True)
+fl_merge_all_data["_merge"].value_counts()
+fl_data_to_use = fl_merge_all_data[["state_x", "fips", "year", "County" , "population" , "Deaths"]].copy()
+fl_data_to_use.rename(columns={"state_x" : "state"}, inplace=True)
+#pre data
+fl_data_pre = fl_data_to_use[(fl_data_to_use["year"] <= 2010)]
+fl_data_pre.to_csv('/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/fl_pre.csv', index=False)
+
+
+#post data 
+fl_data_post = fl_data_to_use[(fl_data_to_use["year"] >= 2011)]
+
+fl_data_post.to_csv('/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/fl_post.csv', index=False)
+
+
+
+###############################################################################################################
+""" Turn into function to do WA"""
+
+#🚩 make function
+#Florida Overdose
+WA_states = ["WA","LA","MD","OK","IN","ID","MN","NE","NV","VA"]
+WA_states_names = ["Washington", "Louisiana", "Maryland", "Oklahoma", "Indiana", "Idaho","Minnesota","Nebraska","Nevada","Virginia"]
+ 
+states_WA = {
+    "Washington": "WA",
+    "Louisiana": "LA",
+    "Maryland": "MD",
+    "Oklahoma": "OK",
+    "Indiana": "IN",
+    "Idaho": "ID",
+    "Minnesota": "MN",
+    "Nebraska": "NE",
+    "Nevada": "NV",
+    "Virginia": "VA"
+}
+
+WA_overdose = overdose_filtered[overdose_filtered["State"].isin(WA_states)].copy()
+WA_overdose.rename(columns={"County Code": "fips","State":"state"}, inplace=True)
+WA_overdose["fips"] = WA_overdose["fips"].astype(np.int64)
+WA_overdose["year"] = WA_overdose["Year"].astype(np.int64)
+WA_overdose.sort_values(by = ["state", "fips"], inplace=True)
+
+#drop years outside 2006 and 2014 range
+WA_overdose_range = WA_overdose[(WA_overdose["year"].between(2006, 2014))]
+
+#keep only those with full 9 years
+fips_in_WA = WA_overdose_range["fips"].unique()
+
+WA_compelete_list = []
+for county in fips_in_WA:
+    tmp = WA_overdose_range[(WA_overdose_range["fips"] == county)]
+    if len(tmp["year"]) == 9:
+        WA_compelete_list.append(tmp)
+        pass 
+WA_overdose_complete = pd.concat(WA_compelete_list)
+
+#check point
+assert len(WA_overdose_complete["year"].unique()) == 9
+
+assert (len(WA_overdose_complete["fips"].unique())*len(WA_overdose_complete["year"].unique())) == len(WA_overdose_complete["year"]) 
+
+#add population to it 
+#Adding 2006 to 2014 population data
+#Adding 2006 to 2014 population data
+pop_counties_new = pd.read_csv(
+    "https://raw.githubusercontent.com/wpinvestigative/arcos-api/master/data/pop_counties_20062014.csv",
+    usecols=["NAME", "year", "population"]
+)
+pop_counties_new[["County", "State"]] = pop_counties_new.NAME.str.split(",", n=1, expand=True)
+pop_counties_new["State"] = pop_counties_new.State.str.strip()
+
+pop_new = pop_counties_new[(pop_counties_new["State"].isin(WA_states_names))]
+
+WA_pop = pop_new[["State", "County", "year", "population"]]
+
+#introduce fips codes to population data
+fips_WA = fips[(fips["state"].isin(WA_states))].copy()
+fips_WA.rename(columns={"name" : "County"}, inplace=True)
+
+#add fips to population
+
+pop_WA_final_list = []
+for state in WA_states_names:
+    tmp = WA_pop[(WA_pop["State"] == state)]
+    currstate = states_WA[state]
+    tmp_fips = fips_WA[(fips_WA["state"] == currstate)]
+    tmp_merge = pd.merge(tmp,tmp_fips, on = "County", how = "left", indicator=True)
+    pop_WA_final_list.append(tmp_merge)
+
+
+pop_WA_final = pd.concat(pop_WA_final_list)
+
+
+
+pop_WA_final_clean = pop_WA_final[["state", "fips", "County", "year", "population"]].copy()
+pop_WA_final_clean.sort_values(by = ["state", "fips"], inplace=True)
+
+#✅ both  drop 51515 because no complete data on population
+#assert (len(pop_WA_final_clean["fips"].unique())*(len(pop_WA_final_clean["year"].unique()))) == len(pop_WA_final_clean["fips"]) 
+
+#merge with complete drug deaths 
+WA_merge_all_data = pd.merge(WA_overdose_complete,pop_WA_final_clean, on = ["fips","year"], how="left", indicator=True)
+WA_merge_all_data["_merge"].value_counts()
+WA_data_to_use = WA_merge_all_data[["state_x", "fips", "year", "County" , "population" , "Deaths"]].copy()
+WA_data_to_use.rename(columns={"state_x" : "state"}, inplace=True)
+#pre data
+WA_data_pre = fl_data_to_use[(fl_data_to_use["year"] <= 2010)]
+
+#post data 
+WA_data_post = fl_data_to_use[(fl_data_to_use["year"] >= 2011)]
+#WA_data_post.to_csv('/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/WA_post.csv', index=False)
+#🚩 some weird numbers in deaths data and missing population for  some counties, to be cross referenced
