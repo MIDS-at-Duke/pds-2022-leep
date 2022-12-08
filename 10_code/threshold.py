@@ -29,17 +29,28 @@ overdose["County Code"].astype("int")
 
 #Change year to date time 
 overdose["Year"].unique() #2009 to 2013
-overdose["Year"].astype("int")
+overdose["Year"] = overdose["Year"].astype(np.int64)
+
+#remove explicitly missing values : shelf these
+missing = overdose[(overdose["Deaths"]== "Missing")]
+
+overdose_no_missing = overdose[~(overdose["Deaths"]== "Missing")].copy()
+
+#deaths dtype object to int 
+overdose_no_missing["Deaths"].astype("str")
+overdose_no_missing["Deaths"] = overdose_no_missing.Deaths.str.replace(r"\W.","", regex=True)
+overdose_no_missing["deaths"] = overdose_no_missing["Deaths"].astype("int")
 
 #counties and states split and clean 
-overdose[["County", "State"]] = overdose.County.str.split(",", n=1, expand=True)
-overdose["State"] = overdose.State.str.strip()
+overdose_no_missing[["County", "State"]] = overdose_no_missing.County.str.split(",", n=1, expand=True)
+overdose_no_missing["State"] = overdose_no_missing.State.str.strip()
 
 #check Cause column
-overdose["Drug/Alcohol Induced Cause"].value_counts() #only drug poisoning found
+overdose_no_missing["Drug/Alcohol Induced Cause"].value_counts() #only drug poisoning found
+
 
 #collapse everything to drug deaths
-overdose_grouped = overdose.groupby(["State", "County Code", "Year"])["Deaths"].sum().reset_index()
+overdose_grouped = overdose_no_missing.groupby(["State", "County Code", "Year"])["deaths"].sum().reset_index()
 overdose_grouped.head(20)
 
 
@@ -283,15 +294,15 @@ assert (len(pop_fl_final_clean["fips"].unique())*(len(pop_fl_final_clean["year"]
 #merge with complete drug deaths 
 fl_merge_all_data = pd.merge(fl_overdose_complete,pop_fl_final_clean, on = ["fips","year"], how="left", indicator=True)
 fl_merge_all_data["_merge"].value_counts()
-fl_data_to_use = fl_merge_all_data[["state_x", "fips", "year", "County" , "population" , "Deaths"]].copy()
+fl_data_to_use = fl_merge_all_data[["state_x", "fips", "year", "County" , "population" , "deaths"]].copy()
 fl_data_to_use.rename(columns={"state_x" : "state"}, inplace=True)
 #pre data
-fl_data_pre = fl_data_to_use[(fl_data_to_use["year"] <= 2010)]
+fl_data_pre = fl_data_to_use[(fl_data_to_use["year"] <= 2010) & (fl_data_to_use["fips"] != 35013)]
 fl_data_pre.to_csv('/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/fl_pre.csv', index=False)
 
 
 #post data 
-fl_data_post = fl_data_to_use[(fl_data_to_use["year"] >= 2011)]
+fl_data_post = fl_data_to_use[(fl_data_to_use["year"] >= 2011) & (fl_data_to_use["fips"] != 35013)]
 
 fl_data_post.to_csv('/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/fl_post.csv', index=False)
 
