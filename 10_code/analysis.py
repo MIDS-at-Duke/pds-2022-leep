@@ -4,45 +4,49 @@ import pandas as pd
 
 fl = pd.read_csv("/Users/emma/Downloads/Finality Subsets/FL subsetfinalized.csv")
 wa = pd.read_csv("/Users/emma/Downloads/Finality Subsets/WA subsetfinalized.csv")
+FL_pre = pd.read_csv("/Users/emma/pds-2022-leep/20_intermediate_files/fl_pre.csv")
+FL_post = pd.read_csv("/Users/emma/pds-2022-leep/20_intermediate_files/fl_post.csv")
+FL_new = pd.concat([FL_pre, FL_post])
+FL_new = FL_new.rename(columns = {"year":"TRANSACTION_YEAR", "state": "BUYER_STATE_x", "County":"BUYER_COUNTY_x", "deaths": "Deaths"})
 
 
-def dataset(df, year, state):
+def data_opioids(df, year, state):
     """make dataset ready to run diff-diff and pre-post for opioids"""
     df["TRANSACTION_YEAR"] = df["TRANSACTION_YEAR"].astype("int")
-    groupby_1 = df.groupby(
-        [
-            "BUYER_STATE_x",
-            "BUYER_COUNTY_x",
-            "TRANSACTION_YEAR",
-            "population",
-            "Deaths",
-        ],
+    df = df.groupby(
+        ["BUYER_STATE_x", "BUYER_COUNTY_x", "TRANSACTION_YEAR", "population", "Deaths"],
         as_index=False,
     )["opioid_shipment_population_ratio"].sum()
-    groupby_1["Total shipment"] = (
-        groupby_1["population"] * groupby_1["opioid_shipment_population_ratio"]
-    )
-    opioids_data = groupby_1.groupby(
-        [
-            "BUYER_STATE_x",
-            "TRANSACTION_YEAR",
-        ],
-        as_index=False,
-    )["population", "Deaths", "Total shipment"].sum()
-    opioids_data["death_rate"] = opioids_data["Deaths"] / opioids_data["population"]
-    opioids_data["death_rate"] *= 100000
-    opioids_data["opioid_shipment_population_ratio"] = (
-        opioids_data["Total shipment"] / opioids_data["population"]
-    )
-    opioids_data["policy"] = 0
-    opioids_data.loc[opioids_data["TRANSACTION_YEAR"] > year, "policy"] = 1
-    opioids_data["state"] = 0
-    opioids_data.loc[opioids_data["BUYER_STATE_x"] == state, "state"] = 1
-    return opioids_data
+    # groupby_1['Total shipment']= groupby_1['population']*groupby_1['opioid_shipment_population_ratio']
+    # opioids_data = (groupby_1.groupby(['BUYER_STATE_x','TRANSACTION_YEAR',],as_index=False)['population','Deaths','Total shipment'].sum())
+    df["death_rate"] = df["Deaths"] / df["population"]
+    df["death_rate"] *= 100000
+    df["policy"] = 0
+    df.loc[df["TRANSACTION_YEAR"] > year, "policy"] = 1
+    df["state"] = 0
+    df.loc[df["BUYER_STATE_x"] == state, "state"] = 1
+    return df
 
 
-FL = dataset(fl, 2010, "FL")
-WA = dataset(wa, 2012, "WA")
+def data_death(df, year, state):
+    """make dataset ready to run diff-diff and pre-post for overdose deaths"""
+    df["TRANSACTION_YEAR"] = df["TRANSACTION_YEAR"].astype("int")
+    df["Deaths"] = df["Deaths"].astype("int")
+    df["death_rate"] = df["Deaths"] / df["population"]
+    df["death_rate"] *= 100000
+    df = df.groupby(
+        ["BUYER_STATE_x", "BUYER_COUNTY_x", "TRANSACTION_YEAR"], as_index=False
+    )["death_rate"].sum()
+    df["policy"] = 0
+    df.loc[df["TRANSACTION_YEAR"] > year, "policy"] = 1
+    df["state"] = 0
+    df.loc[df["BUYER_STATE_x"] == state, "state"] = 1
+    return df
+
+
+FL = data_opioids(fl, 2010, "FL")
+FL_death = data_death(FL_new, 2010, "FL")
+WA = data_opioids(wa, 2012, "WA")
 
 # Pre-Post
 def pre_post(data, yvar, xvar, year, analysis, target, alpha=0.05):
