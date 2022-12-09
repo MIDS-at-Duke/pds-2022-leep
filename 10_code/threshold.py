@@ -11,7 +11,7 @@ from collections import defaultdict
 
 #Import overdose deaths 
 
-overdose = pd.read_csv("/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/00_source_data/overdose_df.csv")
+overdose = pd.read_csv("/Users/pr158admin/Desktop/Practical Data Science/project_final/pds-2022-leep/00_source_data/overdose_df.csv")
 overdose.head(15)
 
 #clean the data set > State, County, Code, Year, Deaths
@@ -114,23 +114,28 @@ overdose_filtered_no_missing["Deaths"].isna().any()
 Texas, deaths from 2003 to 2014, threshold is 2007
 Control states = "TX","UT","GA","CO", "CA","ND","IL", "LA","MD","OK",
 """
-group_tx = ["TX","UT","GA","CO", "CA","ND","IL", "LA","MD","OK"]
-group_tx_names = ["Texas","Utah","Georgia","Colorado", "California","North Dakota","Illinois","Louisiana","Maryland","Oklahoma"]
+texas_states = ["TX","UT","GA","CO", "CA","ND","IL", "LA","MD","OK"]
+texas_names = ["Texas","Utah","Georgia","Colorado", "California","North Dakota","Illinois","Louisiana","Maryland","Oklahoma"]
 
-deaths_tx = overdose_filtered_no_missing[(overdose_filtered_no_missing["State"].isin(group_tx))]
+
+deaths_tx = overdose_filtered_no_missing[(overdose_filtered_no_missing["State"].isin(texas_states))]
 
 # for Texas:
-#2003 to 2005 population data
+#2003 to 2005 old population data
 pop_counties_old = pd.read_csv(
     "https://www2.census.gov/programs-surveys/popest/datasets/2000-2006/counties/totals/co-est2006-alldata.csv", usecols=["stname","ctyname", "popestimate2003","popestimate2004","popestimate2005"])
 
-pop_old = pop_counties_old[(pop_counties_old["stname"].isin(group_tx_names)) & (~ (pop_counties_old["ctyname"].isin(group_tx_names)))]
+pop_old = pop_counties_old[(pop_counties_old["stname"].isin(texas_names)) & (~ (pop_counties_old["ctyname"].isin(texas_names)))]
 
 pop_tx_old = pd.melt(pop_old, id_vars=["stname","ctyname",], var_name="year", value_name="population")
 
 pop_tx_old["year"] = pop_tx_old.year.str.replace("popestimate","")
 pop_tx_old["year"] = pop_tx_old.year.str.strip()
-pop_tx_old["year"].value_counts() #884 counties ✅
+pop_tx_old["year"].value_counts() 
+#convert year to int for merge
+pop_tx_old["Year"]=pop_tx_old["year"].astype(np.int64)
+del pop_tx_old['year']
+pop_tx_old.rename(columns={"Year":"year"},inplace=True)
 pop_tx_old.rename(columns={"stname": "State", "ctyname":"County"}, inplace=True)
 
 #pop_tx_old.sort_values(by = ["stname","ctyname"])
@@ -143,71 +148,91 @@ pop_counties_new = pd.read_csv(
 pop_counties_new[["County", "State"]] = pop_counties_new.NAME.str.split(",", n=1, expand=True)
 pop_counties_new["State"] = pop_counties_new.State.str.strip()
 
-pop_new = pop_counties_new[(pop_counties_new["State"].isin(group_tx_names))]
+pop_new = pop_counties_new[(pop_counties_new["State"].isin(texas_names))]
 
 pop_tx_new = pop_new[["State", "County", "year", "population"]]
 
-pop_tx_new["year"].value_counts() #884 counties ✅
+pop_tx_new["year"].value_counts() 
 
-assert sorted(pop_tx_new["State"].unique()) == sorted(group_tx_names)
+assert sorted(pop_tx_new["State"].unique()) == sorted(texas_names)
 
 #merge to make a texas population dataset
 pop_tx_merged = pd.concat([pop_tx_old, pop_tx_new])
 pop_tx_merged.sort_values(by = ["State", "County"], inplace=True)
 
+#introduce fips codes to population data
+fips_tx = fips[(fips["state"].isin(texas_states))].copy()
+fips_tx.rename(columns={"name" : "County"}, inplace=True)
+#dictionary to map state names as abbreviation in population data
+states_TX = {
+    "Texas": "TX",
+    "Utah": "UT",
+    "Georgia": "GA",
+    "Colorado": "CO",
+    "California": "CA",
+    "North Dakota": "ND",
+    "Illinois": "IL",
+    "Louisiana": "LA",
+    "Maryland": "MD",
+    "Oklahoma": "OK",
+}
+#mapping abbreviations
+pop_tx_merged['State'] =pop_tx_merged['State'].map(states_TX)
+pop_tx_merged.rename(columns={"State":"state"}, inplace=True)
 
 #introduce fips codes to population data
-fips_tx = fips[(fips["state"].isin(group_tx))].copy()
+fips_tx = fips[(fips["state"].isin(texas_states))].copy()
 fips_tx.rename(columns={"name" : "County"}, inplace=True)
 
 #add fips to population
-pop_tx_fips = pd.merge(fips_tx, pop_tx_merged, on = "County", how = "left", indicator=True)
+pop_tx_fips = pd.merge(fips_tx, pop_tx_merged, on = ["state","County"], how = "left", indicator=True)
 pop_tx_fips["_merge"].value_counts() #✅ both 
 pop_tx_final = pop_tx_fips[["state", "fips", "County", "year", "population"]].copy()
 
 #reintroduce overdose data
 
-overdose_tx = deaths_tx[(~(deaths_tx["Year"] == 2015))].copy()
-overdose_tx.rename(columns={"County Code": "fips","State":"state"}, inplace=True)
-overdose_tx["fips"] = overdose_tx["fips"].astype(np.int64)
-overdose_tx["year"] = overdose_tx["Year"].astype(np.int64)
-overdose_tx.sort_values(by = ["state", "fips"], inplace=True)
+overdose_deaths_tx = deaths_tx[(~(deaths_tx["Year"] == 2015))].copy()
+overdose_deaths_tx.rename(columns={"County Code": "fips","State":"state"}, inplace=True)
+overdose_deaths_tx["fips"] = overdose_deaths_tx["fips"].astype(np.int64)
+overdose_deaths_tx["year"] = overdose_deaths_tx["Year"].astype(np.int64)
+overdose_deaths_tx.sort_values(by = ["state", "fips"], inplace=True)
 
-#overdose 2003 to 2005
-overdose_tx_03 = overdose_tx[(overdose_tx["year"] <= 2005)]
+# #overdose 2003 to 2005
+# overdose_deaths_tx_03 = overdose_deaths_tx[(overdose_deaths_tx["year"] <= 2007)]
 
-#overdose 2006 to 2011
-overdose_tx_06 = overdose_tx[(overdose_tx["year"]>= 2006)]
+# #overdose 2006 to 2014
+# overdose_deaths_tx_08 = overdose_deaths_tx[(overdose_deaths_tx["year"]>= 2008)]
 
 
 
 #check for counties with full overdose data
-fips_tx_group = overdose_tx_06["fips"].unique()
+# fips_tx_group = overdose_deaths_tx_08["fips"].unique()
 
 
-counties_full_overdose_data = []
-for county in fips_tx_group:
-    tmp = overdose_tx_06[(overdose_tx_06["fips"] == county)].copy()
-    if len(tmp["year"]) == 9:
-        tmp1 = pop_tx_fips[(pop_tx_fips["fips"] == county)]
-        #assert len(tmp1["year"]) == 12
-        tmp_merge = pd.merge(tmp, tmp1, on = "year", how = "left")
-        counties_full_overdose_data.append(tmp_merge)
-        pass
+# counties_full_overdose_data = []
+# for county in fips_tx_group:
+#     tmp = overdose_deaths_tx_08[(overdose_deaths_tx_08["fips"] == county)].copy()
+#     if len(tmp["year"]) == 9:
+#         tmp1 = pop_tx_fips[(pop_tx_fips["fips"] == county)]
+#         #assert len(tmp1["year"]) == 12
+#         tmp_merge = pd.merge(tmp, tmp1, on = "year", how = "left")
+#         counties_full_overdose_data.append(tmp_merge)
+#         pass
 
+#final data to use
+tx_merge_final= pd.merge(overdose_deaths_tx,pop_tx_final, on = ["fips","year"], how="left", indicator=True)
+tx_merge_final["_merge"].value_counts()
+tx_final_data= tx_merge_final[["state_x", "fips", "year", "County" , "population" , "deaths"]].copy()
+tx_final_data.rename(columns={"state_x" : "state"}, inplace=True)
+#policy change year for texas 2007
+#pre data
+tx_prepolicy= tx_final_data[(tx_final_data["year"] <= 2006)]
+tx_prepolicy.to_csv('/Users/pr158admin/Desktop/Practical Data Science/project_final/pds-2022-leep/20_intermediate_files/tx_pre.csv', index=False)
 
-testfin = pd.concat(counties_full_overdose_data)
+#post data
+tx_postpolicy= tx_final_data[(tx_final_data["year"] >= 2007)]
+tx_postpolicy.to_csv('/Users/pr158admin/Desktop/Practical Data Science/project_final/pds-2022-leep/20_intermediate_files/tx_post.csv', index=False)
 ###########################################################################################
-
-full_pop_data = pop_tx_final[(pop_tx_final["fips"].isin(counties_full_overdose_data))].reset_index()
-
-full_overdose_data = overdose_tx[(overdose_tx["fips"].isin(counties_full_overdose_data))].reset_index()
-
-final_tx_merge = pd.merge(full_overdose_data,pop_tx_final,on = ["fips"], how = "left", indicator=True)
-
-final_tx_merge["_merge"].value_counts()
-
-#🚩 texas analysis still failing to concat 2003 and 2006
 
 """
 implementing threshold for WA and FL
