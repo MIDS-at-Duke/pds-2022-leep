@@ -34,7 +34,8 @@ pop_counties_new.head(25)
 
 # for Texas:
 pop_counties_old = pd.read_csv(
-    "https://www2.census.gov/programs-surveys/popest/datasets/2000-2006/counties/totals/co-est2006-alldata.csv")
+    "https://www2.census.gov/programs-surveys/popest/datasets/2000-2006/counties/totals/co-est2006-alldata.csv"
+)
 
 
 # dictionary of states and abbreviations
@@ -49,7 +50,7 @@ states_map = {}
 
 for i in range(0, len(state)):
 
-    states_map[state[i]] = abb[i]
+    states_map[(state[i]).lower()] = abb[i]
 
 
 # overdose data
@@ -101,7 +102,10 @@ df_selection.drop(i, inplace=True)
 # Generating constant states
 states = ["Florida", "Washington", "Texas"]
 num_constant_states = 10
-constant_states(states, 10, df_selection=df_selection)
+constant_states(states, 12, df_selection=df_selection)
+
+# Record of initial trials, the first control states
+
 # Florida': ['Maine', 'West Virginia', 'Vermont'], ME, WV, VT
 #'Washington': ['Louisiana', 'Maryland', 'Oklahoma'], LA, MD, OK
 #'Texas': ['Colorado', 'Utah', 'Georgia'] GA, UT, CO
@@ -111,94 +115,60 @@ constant_states(states, 10, df_selection=df_selection)
 # 'Washington': ['Louisiana', 'Maryland', 'Oklahoma', 'Washington','Indiana','Idaho', 'Minnesota','Nebraska','Nevada','Virginia'],LA, MD, OK
 # Texas': ['Utah', 'Georgia', 'Colorado', 'California', 'North Dakota', 'Illinois','Louisiana','Maryland', 'Oklahoma','Washington']}GA, UT, CO
 
-states_dic = {
-    "Florida": "FL",
-    "West Virginia": "WV",
-    "Vermont": " VT",
-    "Delaware": "DE ",
-    "Hawaii": "HI",
-    "Montana": "MT",
-    "Pennsylvania": "PA",
-    "New Hampshire": "NH",
-    "South Carolina": "SC",
-    "New Mexico": "NM",
-    "Washington": "WA",
-    "Louisiana": "LA",
-    "Maryland": "MD",
-    "Oklahoma": "OK",
-    "Indiana": "IN",
-    "Idaho": "ID",
-    "Minnesota": "MN",
-    "Nebraska": "NE",
-    "Nevada": "NV",
-    "Virginia": "VA",
-    "Texas": "TX",
-    "Utah": "UT",
-    "Georgia": "GA",
-    "Colorado": "CO",
-    "California": "CA",
-    "North Dakota": "ND",
-    "Illinois": "IL",
-    "Louisiana": "LA",
-    "Maryland": "MD",
-    "Oklahoma": "OK",
-}
+################################################################################################
+# Important :
 
-states_FL = {
-    "Florida": "FL",
-    "West Virginia": "WV",
-    "Vermont": "VT",
-    "Delaware": "DE ",
-    "Hawaii": "HI",
-    "Montana": "MT",
-    "Pennsylvania": "PA",
-    "New Hampshire": "NH",
-    "South Carolina": "SC",
-    "New Mexico": "NM",
-}
-states_WA = {
-    "Washington": "WA",
-    "Louisiana": "LA",
-    "Maryland": "MD",
-    "Oklahoma": "OK",
-    "Indiana": "IN",
-    "Idaho": "ID",
-    "Minnesota": "MN",
-    "Nebraska": "NE",
-    "Nevada": "NV",
-    "Virginia": "VA",
-}
-states_TX = {
-    "Texas": "TX",
-    "Utah": "UT",
-    "Georgia": "GA",
-    "Colorado": "CO",
-    "California": "CA",
-    "North Dakota": "ND",
-    "Illinois": "IL",
-    "Louisiana": "LA",
-    "Maryland": "MD",
-    "Oklahoma": "OK",
-}
+# Virginia are separate states. West Virginia and Virginia being present in the dataset is not
+# a mistake.
+# References: https://www.whereig.com/usa/states/virginia/counties/
+# http://www.virginiaplaces.org/regions/westva.html
+# https://en.wikipedia.org/wiki/History_of_West_Virginia
 
-states_dn_full = {}
+################################################################################################
 
-for states_groups in [states_FL, states_WA, states_TX]:
+# parameter set to 12, constructing the lists and dictionaries to house the control and treatment states
 
-    states_dn_full.update(states_groups)
+treatment_control_pairings = constant_states(states, 12, df_selection=df_selection)
 
-states_dn_full
+treatment_control_lists = []
 
-states_set = set()
+final_states = set()
 
-for key in states_dn_full:
+for treatment_state in treatment_control_pairings:
 
-    states_set.add(states_dn_full[key])
+    states_ls = [i for i in treatment_control_pairings[treatment_state]]
 
-states_set
+    # sanity check
 
-final_states = list(states_set)
+    treatment_states_ls = [i for i in treatment_control_pairings.keys()]
 
+    treatment_states_ls.remove(treatment_state)
+
+    for ts in treatment_states_ls:  # aLways 2 elements
+
+        if ts in states_ls:
+
+            states_ls.remove(ts)
+
+            # No treatment states passing as control states
+
+    print(f"{treatment_state} now has {len(states_ls)} control states.")
+
+    states_ls = [treatment_state] + states_ls
+
+    pairings_with_abbreviations = {}
+
+    for state in states_ls:
+
+        if state.lower() in states_map:
+
+            final_states.add(states_map[state.lower()])
+
+            pairings_with_abbreviations[state] = states_map[state.lower()]
+
+    treatment_control_lists.append([pairings_with_abbreviations])
+
+print(f"Number of final states : {len(final_states)}.")
 
 # Final Chunking process
 
@@ -223,9 +193,23 @@ tmp = []
 for data in opioids_raw:
     tmpdata = data[data["BUYER_STATE"].isin(final_states)]
     tmp.append(tmpdata)
-opioids_data = pd.concat(tmp)
-opioids_data.to_csv("opioids_data.csv", encoding="utf-8", index=False)
 
+opioids_data = pd.concat(tmp)
+
+assert len(opioids_data["BUYER_STATE"].unique()) == len(final_states)
+
+for fin_state in opioids_data["BUYER_STATE"].unique():
+
+    assert fin_state in final_states
+
+opioids_data.to_csv(
+    r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\pds-2022-leep\00_source_data\opioids_data.csv.zip",
+    compression="zip",
+    encoding="utf-8",
+    index=False,
+)
+
+# test = pd.read_csv("00_source_data/opioids_data.csv", compression='gzip', encoding="utf-8")
 
 # Closing Final Chunking Process
 
@@ -256,5 +240,5 @@ overdose_grouped = (
     overdose_copy.groupby(["County Code", "Year"])["Deaths"].sum().reset_index()
 )
 
-overdose_grouped.to_csv("overdosegrouped.csv",encoding="utf-8", index=False)
+overdose_grouped.to_csv("overdosegrouped.csv", encoding="utf-8", index=False)
 # final overdose deaths dataset to be used is overdose_copy
