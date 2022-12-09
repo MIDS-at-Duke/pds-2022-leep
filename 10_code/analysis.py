@@ -2,12 +2,47 @@ import altair as alt
 import numpy as np
 import pandas as pd
 
+# Loading all the datasets
+
 fl = pd.read_csv("/Users/emma/Downloads/Finality Subsets/FL subsetfinalized.csv")
 wa = pd.read_csv("/Users/emma/Downloads/Finality Subsets/WA subsetfinalized.csv")
 FL_pre = pd.read_csv("/Users/emma/pds-2022-leep/20_intermediate_files/fl_pre.csv")
 FL_post = pd.read_csv("/Users/emma/pds-2022-leep/20_intermediate_files/fl_post.csv")
 FL_new = pd.concat([FL_pre, FL_post])
-FL_new = FL_new.rename(columns = {"year":"TRANSACTION_YEAR", "state": "BUYER_STATE_x", "County":"BUYER_COUNTY_x", "deaths": "Deaths"})
+FL_new = FL_new.rename(
+    columns={
+        "year": "TRANSACTION_YEAR",
+        "state": "BUYER_STATE_x",
+        "County": "BUYER_COUNTY_x",
+        "deaths": "Deaths",
+    }
+)
+
+WA_pre = pd.read_csv("/Users/emma/pds-2022-leep/20_intermediate_files/WA_pre.csv")
+WA_post = pd.read_csv("/Users/emma/pds-2022-leep/20_intermediate_files/WA_post.csv")
+WA_new = pd.concat([WA_pre, WA_post])
+WA_new = WA_new.rename(
+    columns={
+        "year": "TRANSACTION_YEAR",
+        "state": "BUYER_STATE_x",
+        "County": "BUYER_COUNTY_x",
+        "deaths": "Deaths",
+    }
+)
+
+TX_pre = pd.read_csv("/Users/emma/pds-2022-leep/20_intermediate_files/tx_pre.csv")
+TX_post = pd.read_csv("/Users/emma/pds-2022-leep/20_intermediate_files/tx_post.csv")
+TX_new = pd.concat([TX_pre, TX_post])
+TX_new = TX_new.rename(
+    columns={
+        "year": "TRANSACTION_YEAR",
+        "state": "BUYER_STATE_x",
+        "County": "BUYER_COUNTY_x",
+        "deaths": "Deaths",
+    }
+)
+
+# Preprossessing functions
 
 
 def data_opioids(df, year, state):
@@ -17,8 +52,6 @@ def data_opioids(df, year, state):
         ["BUYER_STATE_x", "BUYER_COUNTY_x", "TRANSACTION_YEAR", "population", "Deaths"],
         as_index=False,
     )["opioid_shipment_population_ratio"].sum()
-    # groupby_1['Total shipment']= groupby_1['population']*groupby_1['opioid_shipment_population_ratio']
-    # opioids_data = (groupby_1.groupby(['BUYER_STATE_x','TRANSACTION_YEAR',],as_index=False)['population','Deaths','Total shipment'].sum())
     df["death_rate"] = df["Deaths"] / df["population"]
     df["death_rate"] *= 100000
     df["policy"] = 0
@@ -44,9 +77,13 @@ def data_death(df, year, state):
     return df
 
 
+# Generating all the needed and ready-to-go subsets
+
 FL = data_opioids(fl, 2010, "FL")
 FL_death = data_death(FL_new, 2010, "FL")
 WA = data_opioids(wa, 2012, "WA")
+WA_death = data_death(WA_new, 2012, "WA")
+TX_death = data_death(TX_new, 2007, "TX")
 
 # Pre-Post
 def pre_post(data, yvar, xvar, year, analysis, target, alpha=0.05):
