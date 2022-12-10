@@ -65,11 +65,39 @@ overdose_grouped = (
 overdose_grouped.head(20)
 #####✅ Quality check passed##############
 
-# Export 
+# Export
 overdose_grouped.to_csv("overdosegrouped.csv", encoding="utf-8", index=False)
 
-#filter out states of interest, OK and LA appear twice, WV and VA corrected
-states = ["FL","WV","VT","DE","HI","MT","PA","NH","SC","NM","WA","IN","ID","MN","NE","NV","VA","TX","UT","GA","CO","CA","ND","IL","LA","MD","OK"]
+# filter out states of interest, OK and LA appear twice, WV and VA corrected
+states = [
+    "FL",
+    "WV",
+    "VT",
+    "DE",
+    "HI",
+    "MT",
+    "PA",
+    "NH",
+    "SC",
+    "NM",
+    "WA",
+    "IN",
+    "ID",
+    "MN",
+    "NE",
+    "NV",
+    "VA",
+    "TX",
+    "UT",
+    "GA",
+    "CO",
+    "CA",
+    "ND",
+    "IL",
+    "LA",
+    "MD",
+    "OK",
+]
 
 overdose_filtered = overdose_grouped[(overdose_grouped["State"].isin(states))]
 overdose_filtered["County Code"].astype("int")
@@ -84,7 +112,7 @@ counties will also be dropped from the shipment for the same regard.
 
 # 🚩 north dakota
 # how many counties per state?
-#overdose[(overdose["State"] == "ND")]
+# overdose[(overdose["State"] == "ND")]
 
 
 # using fips codes
@@ -150,9 +178,9 @@ texas_names = [
 deaths_tx = overdose_filtered_no_missing[
     (overdose_filtered_no_missing["State"].isin(texas_states))
 ]
-deaths_tx = overdose_filtered_no_missing[(overdose_filtered_no_missing["State"].isin(texas_states))]
-
-
+deaths_tx = overdose_filtered_no_missing[
+    (overdose_filtered_no_missing["State"].isin(texas_states))
+]
 
 
 # for Texas:
@@ -268,17 +296,20 @@ fips_tx_group = overdose_deaths_tx["fips"].unique()
 counties_full_overdose_tx = []
 for county in fips_tx_group:
     tmp = overdose_deaths_tx[(overdose_deaths_tx["fips"] == county)].copy()
-    if len(tmp["year"]) ==12:
+    if len(tmp["year"]) == 12:
         counties_full_overdose_tx.append(tmp)
-        pass 
+        pass
 tx_overdose_complete = pd.concat(counties_full_overdose_tx)
 
-#check point
+# check point
 assert len(tx_overdose_complete["year"].unique()) == 12
 
-assert (len(tx_overdose_complete["fips"].unique())*len(tx_overdose_complete["year"].unique())) == len(tx_overdose_complete["year"]) 
+assert (
+    len(tx_overdose_complete["fips"].unique())
+    * len(tx_overdose_complete["year"].unique())
+) == len(tx_overdose_complete["year"])
 
-#check for counties with full overdose data
+# check for counties with full overdose data
 # fips_tx_group = overdose_deaths_tx_08["fips"].unique()
 
 
@@ -292,8 +323,10 @@ assert (len(tx_overdose_complete["fips"].unique())*len(tx_overdose_complete["yea
 #         counties_full_overdose_data.append(tmp_merge)
 #         pass
 
-#final data to use
-tx_merge_final= pd.merge(tx_overdose_complete,pop_tx_final, on = ["fips","year"], how="left", indicator=True)
+# final data to use
+tx_merge_final = pd.merge(
+    tx_overdose_complete, pop_tx_final, on=["fips", "year"], how="left", indicator=True
+)
 tx_merge_final["_merge"].value_counts()
 tx_final_data = tx_merge_final[
     ["state_x", "fips", "year", "County", "population", "deaths"]
@@ -389,7 +422,7 @@ pop_counties_new[["County", "State"]] = pop_counties_new.NAME.str.split(
 )
 pop_counties_new["State"] = pop_counties_new.State.str.strip()
 
-#Correct Dona Ana County 
+# Correct Dona Ana County
 pop_counties_new["County"].replace({"Do?a Ana County": "Dona Ana County"}, inplace=True)
 
 pop_new = pop_counties_new[(pop_counties_new["State"].isin(fl_states_names))]
@@ -397,7 +430,9 @@ pop_new = pop_counties_new[(pop_counties_new["State"].isin(fl_states_names))]
 fl_pop = pop_new[["State", "County", "year", "population"]]
 
 # introduce fips codes to population data
-fips["name"].replace({"Do̱a Ana County": "Dona Ana County"}, inplace=True) #Fix Dona Ana in Fips too
+fips["name"].replace(
+    {"Do̱a Ana County": "Dona Ana County"}, inplace=True
+)  # Fix Dona Ana in Fips too
 fips_fl = fips[(fips["state"].isin(fl_states))].copy()
 fips_fl.rename(columns={"name": "County"}, inplace=True)
 
@@ -442,17 +477,17 @@ fl_data_to_use.to_csv(
     "/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/fl_full.csv",
     index=False,
 )
-population_threshold_fl = fl_data_to_use["population"].min() #40,008 
+population_threshold_fl = fl_data_to_use["population"].min()  # 40,008
 
 #  pre data
-#fl_data_pre = fl_data_to_use[(fl_data_to_use["year"] <= 2010) & (fl_data_to_use["fips"] != 35013)]
-#fl_data_pre.to_csv( "/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/fl_pre.csv",index=False)
+# fl_data_pre = fl_data_to_use[(fl_data_to_use["year"] <= 2010) & (fl_data_to_use["fips"] != 35013)]
+# fl_data_pre.to_csv( "/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/fl_pre.csv",index=False)
 
 
 # post data
-#fl_data_post = fl_data_to_use[(fl_data_to_use["year"] >= 2011) & (fl_data_to_use["fips"] != 35013)]
+# fl_data_post = fl_data_to_use[(fl_data_to_use["year"] >= 2011) & (fl_data_to_use["fips"] != 35013)]
 
-#fl_data_post.to_csv("/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/fl_post.csv",index=False,)
+# fl_data_post.to_csv("/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/fl_post.csv",index=False,)
 
 ###############################################################################################################
 """ Create threshold for WA"""
@@ -555,7 +590,7 @@ pop_WA_final_clean.sort_values(by=["state", "fips"], inplace=True)
 
 
 # ✅ both  drop 51515 because no complete data on population
-#assert (len(pop_WA_final_clean["fips"].unique())*(len(pop_WA_final_clean["year"].unique()))) == len(pop_WA_final_clean["fips"])
+# assert (len(pop_WA_final_clean["fips"].unique())*(len(pop_WA_final_clean["year"].unique()))) == len(pop_WA_final_clean["fips"])
 
 # merge with complete drug deaths
 WA_merge_all_data = pd.merge(
@@ -579,10 +614,10 @@ WA_data_to_use.to_csv(
 )
 
 # pre data
-#WA_data_pre = WA_data_to_use[(WA_data_to_use["year"] <= 2010)]
-#WA_data_pre.to_csv( "/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/WA_pre.csv",index=False,#)
+# WA_data_pre = WA_data_to_use[(WA_data_to_use["year"] <= 2010)]
+# WA_data_pre.to_csv( "/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/WA_pre.csv",index=False,#)
 # post data
-#WA_data_post = WA_data_to_use[(WA_data_to_use["year"] >= 2011)]
-#WA_data_post.to_csv( "/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/WA_post.csv",index=False,)
+# WA_data_post = WA_data_to_use[(WA_data_to_use["year"] >= 2011)]
+# WA_data_post.to_csv( "/Users/lorna/Documents/MIDS 2022/First Semester/720 Practicing Data Science/Final Project/final project work/pds-2022-leep/20_intermediate_files/WA_post.csv",index=False,)
 
 ###########################################################################################################
