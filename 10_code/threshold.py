@@ -70,7 +70,7 @@ counties will also be dropped from the shipment for the same regard.
 
 #🚩 north dakota
 #how many counties per state?
-overdose[(overdose["State"] == "ND")]
+#overdose[(overdose["State"] == "ND")]
 
 
 #using fips codes
@@ -106,8 +106,8 @@ missing_data = pd.concat(missing_counties)
 #take them out of our filtered df 
 overdose_filtered_no_missing = overdose_filtered[~(overdose_filtered["County Code"].isin([missing_data["County Fips"]]))]
 
-overdose_filtered_no_missing["Deaths"].min()
-overdose_filtered_no_missing["Deaths"].isna().any()
+overdose_filtered_no_missing["deaths"].min()
+overdose_filtered_no_missing["deaths"].isna().any()
 
 
 """
@@ -119,6 +119,9 @@ texas_names = ["Texas","Utah","Georgia","Colorado", "California","North Dakota",
 
 
 deaths_tx = overdose_filtered_no_missing[(overdose_filtered_no_missing["State"].isin(texas_states))]
+
+
+
 
 # for Texas:
 #2003 to 2005 old population data
@@ -203,7 +206,20 @@ overdose_deaths_tx.sort_values(by = ["state", "fips"], inplace=True)
 # #overdose 2006 to 2014
 # overdose_deaths_tx_08 = overdose_deaths_tx[(overdose_deaths_tx["year"]>= 2008)]
 
+fips_tx_group = overdose_deaths_tx["fips"].unique()
 
+counties_full_overdose_tx = []
+for county in fips_tx_group:
+    tmp = overdose_deaths_tx[(overdose_deaths_tx["fips"] == county)].copy()
+    if len(tmp["year"]) ==12:
+        counties_full_overdose_tx.append(tmp)
+        pass 
+tx_overdose_complete = pd.concat(counties_full_overdose_tx)
+
+#check point
+assert len(tx_overdose_complete["year"].unique()) == 12
+
+assert (len(tx_overdose_complete["fips"].unique())*len(tx_overdose_complete["year"].unique())) == len(tx_overdose_complete["year"]) 
 
 #check for counties with full overdose data
 # fips_tx_group = overdose_deaths_tx_08["fips"].unique()
@@ -220,7 +236,7 @@ overdose_deaths_tx.sort_values(by = ["state", "fips"], inplace=True)
 #         pass
 
 #final data to use
-tx_merge_final= pd.merge(overdose_deaths_tx,pop_tx_final, on = ["fips","year"], how="left", indicator=True)
+tx_merge_final= pd.merge(tx_overdose_complete,pop_tx_final, on = ["fips","year"], how="left", indicator=True)
 tx_merge_final["_merge"].value_counts()
 tx_final_data= tx_merge_final[["state_x", "fips", "year", "County" , "population" , "deaths"]].copy()
 tx_final_data.rename(columns={"state_x" : "state"}, inplace=True)
