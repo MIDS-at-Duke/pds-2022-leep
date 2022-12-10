@@ -102,7 +102,7 @@ df_selection.drop(i, inplace=True)
 # Generating constant states
 states = ["Florida", "Washington", "Texas"]
 num_constant_states = 10
-constant_states(states, 12, df_selection=df_selection)
+constant_states(states, 10, df_selection=df_selection)
 
 # Record of initial trials, the first control states
 
@@ -128,7 +128,7 @@ constant_states(states, 12, df_selection=df_selection)
 
 # parameter set to 12, constructing the lists and dictionaries to house the control and treatment states
 
-treatment_control_pairings = constant_states(states, 12, df_selection=df_selection)
+treatment_control_pairings = constant_states(states, 10, df_selection=df_selection)
 
 treatment_control_lists = []
 
@@ -214,31 +214,34 @@ opioids_data.to_csv(
 # Closing Final Chunking Process
 
 
-# overdose deaths dataset
-overdose_deaths = pd.read_csv(
-    r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\pds-2022-leep\00_source_data\overdose_df.csv"
-)
+# Preserving this cleaning code for posterity, but it was handled and optimized in the
+# threshold.py file by the other members.
 
-# overdose_df1 = overdose_df[overdose_df["County"].isin(states)]
-overdose_deaths2 = overdose_deaths[
-    overdose_deaths["County"].str.contains("|".join(final_states))
-]
-overdose_copy = overdose_deaths2.copy()
-overdose_copy[["County", "State"]] = overdose_deaths2.County.str.split(
-    ",", n=1, expand=True
-)
-overdose_copy["County"] = overdose_copy["County"].str.lower()
-overdose_copy["County"] = overdose_copy["County"].str.replace("county", "")
-overdose_copy["County"] = overdose_copy["County"].astype(str) + " county"
-overdose_copy = overdose_copy.drop(["Notes", "Year Code"], axis=1)
-overdose_copy["Deaths"] = overdose_copy["Deaths"].astype("float")
+# # overdose deaths dataset
+# overdose_deaths = pd.read_csv(
+#     r"C:\Users\ericr\Downloads\cmder\720newsafeopioids\pds-2022-leep\00_source_data\overdose_df.csv"
+# )
 
-# 8001.0 county code, year 2009 :  52 + 15 deaths = 67 , this is our reference
-# this was done to prevent severe data bloating
+# # overdose_df1 = overdose_df[overdose_df["County"].isin(states)]
+# overdose_deaths2 = overdose_deaths[
+#     overdose_deaths["County"].str.contains("|".join(final_states))
+# ]
+# overdose_copy = overdose_deaths2.copy()
+# overdose_copy[["County", "State"]] = overdose_deaths2.County.str.split(
+#     ",", n=1, expand=True
+# )
+# overdose_copy["County"] = overdose_copy["County"].str.lower()
+# overdose_copy["County"] = overdose_copy["County"].str.replace("county", "")
+# overdose_copy["County"] = overdose_copy["County"].astype(str) + " county"
+# overdose_copy = overdose_copy.drop(["Notes", "Year Code"], axis=1)
+# overdose_copy["Deaths"] = overdose_copy["Deaths"].astype("float")
 
-overdose_grouped = (
-    overdose_copy.groupby(["County Code", "Year"])["Deaths"].sum().reset_index()
-)
+# # 8001.0 county code, year 2009 :  52 + 15 deaths = 67 , this is our reference
+# # this was done to prevent severe data bloating
 
-overdose_grouped.to_csv("overdosegrouped.csv", encoding="utf-8", index=False)
-# final overdose deaths dataset to be used is overdose_copy
+# overdose_grouped = (
+#     overdose_copy.groupby(["County Code", "Year"])["Deaths"].sum().reset_index()
+# )
+
+# overdose_grouped.to_csv("overdosegrouped.csv", encoding="utf-8", index=False)
+# # final overdose deaths dataset to be used is overdose_copy

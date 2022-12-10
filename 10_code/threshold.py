@@ -54,6 +54,9 @@ overdose_grouped = overdose_no_missing.groupby(["State", "County Code", "Year"])
 overdose_grouped.head(20)
 #####✅ Quality check passed##############
 
+# Export 
+overdose_grouped.to_csv("overdosegrouped.csv", encoding="utf-8", index=False)
+
 #filter out states of interest, OK and LA appear twice, WV and VA corrected
 states = ["FL","WV","VT","DE","HI","MT","PA","NH","SC","NM","WA","IN","ID","MN","NE","NV","VA","TX","UT","GA","CO","CA","ND","IL","LA","MD","OK"]
 
