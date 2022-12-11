@@ -79,7 +79,7 @@ states_WA = {
     "Minnesota": "MN",
     "Nebraska": "NE",
     "Nevada": "NV",
-    "Virginia": "WV",
+    "Virginia": "VA",
 }
 states_TX = {
     "Texas": "TX",
