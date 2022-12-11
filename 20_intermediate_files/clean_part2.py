@@ -61,7 +61,7 @@ states_FL = {
     "Florida": "FL",
     "West Virginia": "WV",
     "Vermont": "VT",
-    "Delaware": "DE ",
+    "Delaware": "DE",
     "Hawaii": "HI",
     "Montana": "MT",
     "Pennsylvania": "PA",
